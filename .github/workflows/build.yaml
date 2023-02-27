@@ -5,7 +5,8 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    env:
+      VERSION: default
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
@@ -24,8 +25,6 @@ jobs:
     - name: Build with Maven
       run: mvn package
       id: build_maven
-
-    
 
     - name: Create Release
       uses: actions/create-release@v1
