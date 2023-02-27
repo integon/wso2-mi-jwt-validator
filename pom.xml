@@ -102,7 +102,6 @@
       <plugin>
         <artifactId>maven-jar-plugin</artifactId>
         <configuration>
-          <outputDirectory>jar</outputDirectory>
           <archive>
             <index>true</index>
             <manifest>
