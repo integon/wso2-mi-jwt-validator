@@ -18,8 +18,7 @@ jobs:
 
     - name: Get version
       run: |
-        VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-        echo "::set-output name=version::$VERSION"
+        echo "RELEASE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
       id: get_version
 
     - name: Build with Maven
@@ -32,8 +31,8 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: v$VERSION
-        release_name: Release v$VERSION
+        tag_name: v${{ env.RELEASE_VERSION }}
+        release_name: Release v${{ env.RELEASE_VERSION }}
         body: |
           This is the first release of my project.
           It includes several new features and bug fixes.
@@ -46,6 +45,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./target/wso2-mi-jwt-validator-$VERSION.jar
-        asset_name: wso2-mi-jwt-validator-$VERSION.jar
+        asset_path: ./target/wso2-mi-jwt-validator-${{ env.RELEASE_VERSION }}.jar
+        asset_name: wso2-mi-jwt-validator-${{ env.RELEASE_VERSION }}.jar
         asset_content_type: application/java-archive
