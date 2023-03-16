@@ -40,8 +40,8 @@ public class JwtAuthMediator extends AbstractMediator {
      * Validate the JWT token with the JWTValidator
      * Check if the JWT token is expired 
      * Check claims if they are set
-     * @param messageContext
-     * @return
+     * @param messageContext Synapse message context 
+     * @return true if the JWT token is valid
      * @throws SynapseException
      */
     @Override
@@ -131,8 +131,8 @@ public class JwtAuthMediator extends AbstractMediator {
      * Retrieve the properties from the message context
      * Check if the required properties are set
      * If not, throw an exception
-     * @param messageContext
-     * @throws Exception
+     * @param messageContext Synapse message context
+     * @throws Exception if a required property is not set
      */
     private void applyProperties(MessageContext messageContext) throws Exception {
         clearProperties();
@@ -188,8 +188,8 @@ public class JwtAuthMediator extends AbstractMediator {
 
     /**
      * This method is used to handle the exceptions
-     * @param message
-     * @param messageContext
+     * @param message the error message
+     * @param messageContext Synapse message context
      */
     protected void handleException(String message, MessageContext messageContext) {
         // Create a SOAPFactory and an XML payload

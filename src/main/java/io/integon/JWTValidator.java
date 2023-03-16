@@ -45,9 +45,8 @@ public class JWTValidator {
      * The kid is extracted from the JWT token and used to get the JWK from the JWKS
      * The JWK is converted to a public key
      * The JWT token is validated using the public key
-     * @param jwtToken
-     * @param jwksEndpoint
-     * @param claims
+     * @param jwtToken The JWT token to validate
+     * @param jwksEndpoint The JWKS endpoint to use for validation
      * @return true if the JWT token is valid
      * @throws Exception
      */
@@ -83,7 +82,7 @@ public class JWTValidator {
     /**
      * Checks if the JWT token is expired 
      * This method only gets called if the JWT token is valid
-     * @param jwtToken
+     * @param jwtToken The JWT token to check
      * @return true if the JWT token is expired
      * @throws Exception
      */
@@ -108,8 +107,8 @@ public class JWTValidator {
     /**
      * Checks if the claims in the JWT token are valid or have the expected values
      * This method only gets called if the JWT token is valid and not expired and there are claims to validate
-     * @param jwtToken
-     * @param claims
+     * @param jwtToken The JWT token to check
+     * @param claims The claims to validate
      * @return true if the claims are valid
      * @throws Exception
      */
@@ -306,8 +305,8 @@ public class JWTValidator {
     }
     /**
      * Checks if the given string is parseable as a long.
-     * @param s
-     * @return
+     * @param s the string to be checked
+     * @return true if the string is parseable as a long, false otherwise
      */
     private boolean isLongParseable (String s) {
         try {

@@ -48,7 +48,7 @@ public class JwtAuthHandler implements Handler {
      * Initialize the JWTValidator and retrieve the JWT token from the transport headers
      * Check if the JWT token is expired
      * Validate the JWT token and check if the claims are valid
-     * @param messageContext
+     * @param messageContext Synapse message context
      * @return true if the request is valid, false if the request is invalid
      */
     @Override
@@ -169,8 +169,8 @@ public class JwtAuthHandler implements Handler {
     
     /**
      * This method is called when the response is sent back to the client
-     * @param messageContext
-     * @return
+     * @param messageContext Synapse message context
+     * @return true if the response is valid, false if the response is invalid
      */
     @Override
     public boolean handleResponse(MessageContext messageContext) {
@@ -179,8 +179,8 @@ public class JwtAuthHandler implements Handler {
 
     /**
      * This method handles the exceptions thrown by the JWTValidator
-     * @param message
-     * @param messageContext
+     * @param message the error message
+     * @param messageContext Synapse message context
      */
     protected void handleException(String message, MessageContext messageContext) {
         // Create a SOAPFactory and an XML payload
