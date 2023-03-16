@@ -31,4 +31,4 @@ jar/
 # vscode settings
 .vscode/
 
-*.back
+*.back*
