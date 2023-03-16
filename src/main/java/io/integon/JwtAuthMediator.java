@@ -11,9 +11,9 @@ import org.apache.synapse.SynapseException;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
 
-public class JWTValidationMediator extends AbstractMediator {
+public class JwtAuthMediator extends AbstractMediator {
 
-    private static final Log log = LogFactory.getLog(JWTValidationMediator.class);
+    private static final Log log = LogFactory.getLog(JwtAuthMediator.class);
 
     private String jwtToken;
     private String jwksEndpoint;
@@ -31,99 +31,147 @@ public class JWTValidationMediator extends AbstractMediator {
 
     private JWTValidator validator = null;
 
+    
+    /**
+     * This method is called when the request is received by the API
+     * Get properties from the message context and set them to the class variables
+     * Initialize the JWTValidator
+     * Isolate the JWT token from the Authorization header
+     * Validate the JWT token with the JWTValidator
+     * Check if the JWT token is expired 
+     * Check claims if they are set
+     * @param messageContext
+     * @return
+     * @throws SynapseException
+     */
     @Override
     public boolean mediate(MessageContext messageContext) {
         try {
             applyProperties (messageContext);
         } catch (Exception e) {
             handleException(e.getMessage(), messageContext);
-            return false;
         }
         // initialize the JWTValidator
         if (validator == null || cachedTimeValidator + cachedTimeValidatorReset < System.currentTimeMillis()) {
             validator = new JWTValidator();
             cachedTimeValidator = System.currentTimeMillis();
         }
-
         // Check if the token starts with "Bearer "
-        if (!jwtToken.startsWith("Bearer ")) {
+        if (!jwtToken.trim().startsWith("Bearer")) {
+            log.debug("Invalid JWT format: " + jwtToken);
             handleException("Invalid JWT format", messageContext);
-            return false;
         } else {
             // Remove "Bearer " from the token
             jwtToken = jwtToken.substring(7);
             if (jwtToken == null || jwtToken.isEmpty()) {
+                log.debug("JWT token not found in the message");
                 handleException("JWT token not found in the message", messageContext);
-                return false;
             }
         }
         // If jwksEnvVariable is set, check if the environment variable contains a valid URL
         if (jwksEnvVariable != null && CommonUtils.containsUrl(System.getenv().get(jwksEnvVariable))  ) {
             jwksEndpoint = System.getenv().get(jwksEnvVariable);
+            log.debug("JWKS endpoint from Env Variable " + jwksEnvVariable +": " + jwksEndpoint);
         } else {
             // Check if the JWKS endpoint
             if (jwksEndpoint == null || jwksEndpoint.isEmpty()) {
+                log.debug("JWKS endpoint not found in the message context or environment variable");
                 handleException("JWKS endpoint not found", messageContext);
-                return false;
             }
         }
 
         // retrieve JWKS_TIMEOUT & JWKS_REFRESH_TIME from the message context
         validator.setCacheTimeouts(jwksTimeout, jwksRefreshTime);
+       
+        // validate the JWT token
+        boolean isValidJWT;
+        try {
+            isValidJWT = validator.validateToken(jwtToken, jwksEndpoint);
+            log.debug("isValidJWT: " + isValidJWT);
+        } catch (Exception e) {
+            handleException(e.getMessage(), messageContext);
+        }
+        boolean isTokenExpired;
+        try {
+            isTokenExpired = validator.isTokenExpired(jwtToken);
+            if (isTokenExpired) {
+                handleException("JWT token is expired", messageContext);
+            }
+        } catch (Exception e) {
+            handleException(e.getMessage(), messageContext);
+        }
 
         // retrieve the sub claim from the message context
-        HashMap<String, String> claims = new HashMap<>();
+        HashMap<String, String> claims = new HashMap<String,String>();
         claims.put("iat", iatClaim);
         claims.put("iss", issClaim);
         claims.put("sub", subClaim);
         claims.put("aud", audClaim);
         claims.put("jti", jtiClaim);
-
-        // validate the JWT token
-        boolean isValidJWT;
-        try {
-            isValidJWT = validator.validateToken(jwtToken, jwksEndpoint, claims);
-        } catch (Exception e) {
-            handleException(e.getMessage(), messageContext);
+        log.debug("JWT claims Map set: " + claims);
+        // check if all values are null
+        boolean allValuesAreNull = true;
+        for (String value : claims.values()) {
+            if (value != null) {
+                allValuesAreNull = false;
+                break;
+            }
         }
+        if (!allValuesAreNull) {
+            try {
+                validator.areClaimsValid(jwtToken, claims);
+            } catch (Exception e) {
+                handleException(e.getMessage(), messageContext);
+            }
+        }
+        log.debug("JWT validation successful");
         return true;
     }
-
+    /**
+     * Retrieve the properties from the message context
+     * Check if the required properties are set
+     * If not, throw an exception
+     * @param messageContext
+     * @throws Exception
+     */
     private void applyProperties(MessageContext messageContext) throws Exception {
         clearProperties();
-        jwtToken = (String) messageContext.getProperty("JWT_TOKEN");
+        jwtToken = (String) messageContext.getProperty("jwtToken");
         if (jwtToken == null || jwtToken.isEmpty()) {
             throw new Exception("JWT not found in the message");
         }
-        jwksEndpoint = (String) messageContext.getProperty("JWKS_ENDPOINT");
-        jwksEnvVariable = (String) messageContext.getProperty("JWKS_ENV_VARIABLE");
+        jwksEndpoint = (String) messageContext.getProperty("jwksEndpoint");
+        jwksEnvVariable = (String) messageContext.getProperty("jwksEnvVariable");
         if ((jwksEndpoint == null || jwksEndpoint.isEmpty()) && (jwksEnvVariable == null || jwksEnvVariable.isEmpty())) {
             throw new Exception("JWKS endpoint not found in the message");
         }
-        iatClaim = (String) messageContext.getProperty("IAT_CLAIM");
+        iatClaim = (String) messageContext.getProperty("iatClaim");
         if (iatClaim != null && iatClaim.isEmpty()) {
             iatClaim = null;
         }
-        issClaim = (String) messageContext.getProperty("ISS_CLAIM");
+        issClaim = (String) messageContext.getProperty("issClaim");
         if (issClaim != null && issClaim.isEmpty()) {
             issClaim = null;
         }
-        subClaim = (String) messageContext.getProperty("SUB_CLAIM");
+        subClaim = (String) messageContext.getProperty("subClaim");
         if (subClaim != null && subClaim.isEmpty()) {
             subClaim = null;
         }
-        audClaim = (String) messageContext.getProperty("AUD_CLAIM");
+        audClaim = (String) messageContext.getProperty("audClaim");
         if (audClaim != null && audClaim.isEmpty()) {
             audClaim = null;
         }
-        jtiClaim = (String) messageContext.getProperty("JTI_CLAIM");
+        jtiClaim = (String) messageContext.getProperty("jtiClaim");
         if (jtiClaim != null && jtiClaim.isEmpty()) {
             jtiClaim = null;
         }
-        jwksTimeout = (String) messageContext.getProperty("JWKS_TIMEOUT");
-        jwksRefreshTime = (String) messageContext.getProperty("JWKS_REFRESH_TIME");
+        jwksTimeout = (String) messageContext.getProperty("jwksTimeout");
+        jwksRefreshTime = (String) messageContext.getProperty("jwksRefreshTime");
+        log.debug("Properties set");
     }
-
+    /**
+     * This method is used to clear the properties
+     */
     private void clearProperties() {
         jwtToken = null;
         jwksEndpoint = null;
@@ -135,11 +183,17 @@ public class JWTValidationMediator extends AbstractMediator {
         jtiClaim = null;
         jwksTimeout = null;
         jwksRefreshTime = null;
+        log.debug("Properties cleared");
     }
 
+    /**
+     * This method is used to handle the exceptions
+     * @param message
+     * @param messageContext
+     */
     protected void handleException(String message, MessageContext messageContext) {
         // Create a SOAPFactory and an XML payload
-        CommonUtils.setJsonEnvolopMessageContext(messageContext, message);
+        CommonUtils.setJsonEnvelopMessageContext(messageContext, message);
 
         // Get Transport Headers from the message context
         org.apache.axis2.context.MessageContext axis2MessageContext = ((Axis2MessageContext) messageContext).getAxis2MessageContext();
