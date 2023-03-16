@@ -1,5 +1,6 @@
 package io.integon;
 
+
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.logging.Log;
@@ -11,12 +12,12 @@ import org.apache.synapse.core.axis2.Axis2Sender;
 import org.apache.synapse.rest.Handler;
 
 /**
- * This class is used to validate the JWT token
- * Implements the Handler interface from the Synapse REST API to be used in a Micro Integrator API
+ * This class is used to validate the JWT token Implements the Handler interface
+ * from the Synapse REST API to be used in a Micro Integrator API
  */
 public class JwtAuthHandler implements Handler {
     private static final Log log = LogFactory.getLog(JwtAuthMediator.class);
-    
+
     private String jwtHeader;
     private String jwksEndpoint;
     private String jwksEnvVariable;
@@ -29,26 +30,28 @@ public class JwtAuthHandler implements Handler {
     private String jwksRefreshTime;
 
     private long cachedTimeValidator = 0;
-    private long cachedTimeValidatorReset = 86400000;  // 24 hours
+    private long cachedTimeValidatorReset = 86400000; // 24 hours
 
     private JWTValidator validator = null;
 
     @Override
     public void addProperty(String s, Object o) {
-        //To change body of implemented methods use File | Settings | File Templates.
+        // To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
     public Map getProperties() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null; // To change body of implemented methods use File | Settings | File Templates.
     }
 
     /**
-     * This method is called when the request is received
-     * Initialize the JWTValidator and retrieve the JWT token from the transport headers
-     * Check if the JWT token is expired
-     * Validate the JWT token and check if the claims are valid
-     * @param messageContext Synapse message context
+     * This method is called when the request is received Initialize the
+     * JWTValidator and retrieve the JWT token from the transport headers Check if
+     * the JWT token is expired Validate the JWT token and check if the claims are
+     * valid
+     * 
+     * @param messageContext
+     *            Synapse message context
      * @return true if the request is valid, false if the request is invalid
      */
     @Override
@@ -61,18 +64,19 @@ public class JwtAuthHandler implements Handler {
         }
 
         // Get Transport Headers from the message context
-        org.apache.axis2.context.MessageContext axis2MessageContext = ((Axis2MessageContext) messageContext).getAxis2MessageContext();
+        org.apache.axis2.context.MessageContext axis2MessageContext = ((Axis2MessageContext) messageContext)
+                .getAxis2MessageContext();
         Object headers = axis2MessageContext.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
 
         // retrieve the JWT token from transport headers
-        String authHeader= null;
+        String authHeader = null;
         if (headers != null && headers instanceof Map) {
             Map headersMap = (Map) headers;
             authHeader = (String) headersMap.get(jwtHeader);
         }
 
         // Check if the token is null or empty
-        if (authHeader == null || authHeader.isEmpty() ) {
+        if (authHeader == null || authHeader.isEmpty()) {
             log.debug("JWT token not found in the message");
             handleException("JWT token not found in the message", messageContext);
             return false;
@@ -91,9 +95,10 @@ public class JwtAuthHandler implements Handler {
             handleException("JWT token not found in the message", messageContext);
             return false;
         }
-        // If jwksEnvVariable is set, check if the environment variable contains a valid URL
+        // If jwksEnvVariable is set, check if the environment variable contains a valid
+        // URL
         if (jwksEnvVariable != null && System.getenv().get(jwksEnvVariable) != null) {
-            if (CommonUtils.containsUrl(System.getenv().get(jwksEnvVariable))){
+            if (CommonUtils.containsUrl(System.getenv().get(jwksEnvVariable))) {
                 jwksEndpoint = System.getenv().get(jwksEnvVariable);
             }
         } else {
@@ -107,7 +112,7 @@ public class JwtAuthHandler implements Handler {
         // Set the cache timeouts
         validator.setCacheTimeouts(jwksTimeout, jwksRefreshTime);
 
-        //validate the JWT token
+        // validate the JWT token
         boolean isValidJWT;
         try {
             isValidJWT = validator.validateToken(jwtToken, jwksEndpoint);
@@ -126,7 +131,7 @@ public class JwtAuthHandler implements Handler {
             handleException(e.getMessage(), messageContext);
         }
         // Check if the claims are valid
-        HashMap<String, String> claims = new HashMap<String,String>();
+        HashMap<String, String> claims = new HashMap<String, String>();
         if (iatClaim != null && iatClaim.isEmpty()) {
             iatClaim = null;
         }
@@ -166,10 +171,11 @@ public class JwtAuthHandler implements Handler {
         return true;
     }
 
-    
     /**
      * This method is called when the response is sent back to the client
-     * @param messageContext Synapse message context
+     * 
+     * @param messageContext
+     *            Synapse message context
      * @return true if the response is valid, false if the response is invalid
      */
     @Override
@@ -179,15 +185,19 @@ public class JwtAuthHandler implements Handler {
 
     /**
      * This method handles the exceptions thrown by the JWTValidator
-     * @param message the error message
-     * @param messageContext Synapse message context
+     * 
+     * @param message
+     *            the error message
+     * @param messageContext
+     *            Synapse message context
      */
     protected void handleException(String message, MessageContext messageContext) {
         // Create a SOAPFactory and an XML payload
         CommonUtils.setJsonEnvelopMessageContext(messageContext, message);
 
         // Get Transport Headers from the message context
-        org.apache.axis2.context.MessageContext axis2MessageContext = ((Axis2MessageContext) messageContext).getAxis2MessageContext();
+        org.apache.axis2.context.MessageContext axis2MessageContext = ((Axis2MessageContext) messageContext)
+                .getAxis2MessageContext();
         Object headers = axis2MessageContext.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
 
         // Clear the transport headers
@@ -197,7 +207,8 @@ public class JwtAuthHandler implements Handler {
         // Set the response status code
         axis2MessageContext.setProperty("HTTP_SC", HttpStatus.SC_UNAUTHORIZED);
 
-        // Set the "NO_ENTITY_BODY" property to false -- this is required to send a response
+        // Set the "NO_ENTITY_BODY" property to false -- this is required to send a
+        // response
         axis2MessageContext.setProperty("NO_ENTITY_BODY", Boolean.FALSE);
 
         // Set the response to true
@@ -209,7 +220,7 @@ public class JwtAuthHandler implements Handler {
 
         // Set the "to" property to null
         messageContext.setTo(null);
-       
+
         Axis2Sender.sendBack(messageContext);
     }
 
@@ -294,4 +305,3 @@ public class JwtAuthHandler implements Handler {
         this.jwksRefreshTime = refresh;
     }
 }
-

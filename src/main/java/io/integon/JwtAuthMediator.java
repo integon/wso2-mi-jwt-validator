@@ -1,8 +1,8 @@
 package io.integon;
 
+
 import java.util.HashMap;
 import java.util.Map;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.synapse.MessageContext;
@@ -27,27 +27,26 @@ public class JwtAuthMediator extends AbstractMediator {
     private String jwksRefreshTime;
 
     private long cachedTimeValidator = 0;
-    private long cachedTimeValidatorReset = 86400000;  // 24 hours
+    private long cachedTimeValidatorReset = 86400000; // 24 hours
 
     private JWTValidator validator = null;
 
-    
     /**
-     * This method is called when the request is received by the API
-     * Get properties from the message context and set them to the class variables
-     * Initialize the JWTValidator
-     * Isolate the JWT token from the Authorization header
-     * Validate the JWT token with the JWTValidator
-     * Check if the JWT token is expired 
-     * Check claims if they are set
-     * @param messageContext Synapse message context 
+     * This method is called when the request is received by the API Get properties
+     * from the message context and set them to the class variables Initialize the
+     * JWTValidator Isolate the JWT token from the Authorization header Validate the
+     * JWT token with the JWTValidator Check if the JWT token is expired Check
+     * claims if they are set
+     * 
+     * @param messageContext
+     *            Synapse message context
      * @return true if the JWT token is valid
      * @throws SynapseException
      */
     @Override
     public boolean mediate(MessageContext messageContext) {
         try {
-            applyProperties (messageContext);
+            applyProperties(messageContext);
         } catch (Exception e) {
             handleException(e.getMessage(), messageContext);
         }
@@ -68,10 +67,11 @@ public class JwtAuthMediator extends AbstractMediator {
                 handleException("JWT token not found in the message", messageContext);
             }
         }
-        // If jwksEnvVariable is set, check if the environment variable contains a valid URL
-        if (jwksEnvVariable != null && CommonUtils.containsUrl(System.getenv().get(jwksEnvVariable))  ) {
+        // If jwksEnvVariable is set, check if the environment variable contains a valid
+        // URL
+        if (jwksEnvVariable != null && CommonUtils.containsUrl(System.getenv().get(jwksEnvVariable))) {
             jwksEndpoint = System.getenv().get(jwksEnvVariable);
-            log.debug("JWKS endpoint from Env Variable " + jwksEnvVariable +": " + jwksEndpoint);
+            log.debug("JWKS endpoint from Env Variable " + jwksEnvVariable + ": " + jwksEndpoint);
         } else {
             // Check if the JWKS endpoint
             if (jwksEndpoint == null || jwksEndpoint.isEmpty()) {
@@ -82,7 +82,7 @@ public class JwtAuthMediator extends AbstractMediator {
 
         // retrieve JWKS_TIMEOUT & JWKS_REFRESH_TIME from the message context
         validator.setCacheTimeouts(jwksTimeout, jwksRefreshTime);
-       
+
         // validate the JWT token
         boolean isValidJWT;
         try {
@@ -102,7 +102,7 @@ public class JwtAuthMediator extends AbstractMediator {
         }
 
         // retrieve the sub claim from the message context
-        HashMap<String, String> claims = new HashMap<String,String>();
+        HashMap<String, String> claims = new HashMap<String, String>();
         claims.put("iat", iatClaim);
         claims.put("iss", issClaim);
         claims.put("sub", subClaim);
@@ -128,11 +128,13 @@ public class JwtAuthMediator extends AbstractMediator {
         return true;
     }
     /**
-     * Retrieve the properties from the message context
-     * Check if the required properties are set
-     * If not, throw an exception
-     * @param messageContext Synapse message context
-     * @throws Exception if a required property is not set
+     * Retrieve the properties from the message context Check if the required
+     * properties are set If not, throw an exception
+     * 
+     * @param messageContext
+     *            Synapse message context
+     * @throws Exception
+     *             if a required property is not set
      */
     private void applyProperties(MessageContext messageContext) throws Exception {
         clearProperties();
@@ -142,7 +144,8 @@ public class JwtAuthMediator extends AbstractMediator {
         }
         jwksEndpoint = (String) messageContext.getProperty("jwksEndpoint");
         jwksEnvVariable = (String) messageContext.getProperty("jwksEnvVariable");
-        if ((jwksEndpoint == null || jwksEndpoint.isEmpty()) && (jwksEnvVariable == null || jwksEnvVariable.isEmpty())) {
+        if ((jwksEndpoint == null || jwksEndpoint.isEmpty())
+                && (jwksEnvVariable == null || jwksEnvVariable.isEmpty())) {
             throw new Exception("JWKS endpoint not found in the message");
         }
         iatClaim = (String) messageContext.getProperty("iatClaim");
@@ -188,17 +191,21 @@ public class JwtAuthMediator extends AbstractMediator {
 
     /**
      * This method is used to handle the exceptions
-     * @param message the error message
-     * @param messageContext Synapse message context
+     * 
+     * @param message
+     *            the error message
+     * @param messageContext
+     *            Synapse message context
      */
     protected void handleException(String message, MessageContext messageContext) {
         // Create a SOAPFactory and an XML payload
         CommonUtils.setJsonEnvelopMessageContext(messageContext, message);
 
         // Get Transport Headers from the message context
-        org.apache.axis2.context.MessageContext axis2MessageContext = ((Axis2MessageContext) messageContext).getAxis2MessageContext();
+        org.apache.axis2.context.MessageContext axis2MessageContext = ((Axis2MessageContext) messageContext)
+                .getAxis2MessageContext();
         Object headers = axis2MessageContext.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-        
+
         // Clear the transport headers
         Map headersMap = (Map) headers;
         headersMap.clear();
@@ -213,7 +220,7 @@ public class JwtAuthMediator extends AbstractMediator {
         // Set the response content type
         axis2MessageContext.setProperty("messageType", "application/json");
         axis2MessageContext.setProperty("ContentType", "application/json");
-        
+
         // Throw a SynapseException to signal an error
         throw new SynapseException(message);
     }
