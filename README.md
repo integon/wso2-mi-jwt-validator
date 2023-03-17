@@ -248,7 +248,7 @@ The following examples show how to engage the JWT Handler for MI APIs. Use Cases
                   <property name="issClaim" value="https://apim-dev.integon.ch:443/oauth2/token" />
                   <property name="subClaim" value="admin" />
                   <property name="audClaim" value="Y3wBS2AsdgHW6z2GfEfUpairc_Ma" />
-                  <property name="JT_CLAIM" value="enabled" />
+                  <property name="jtiClaim" value="enabled" />
                   <property name="jwksEnvVariable" value="jwksEndpoint"/>
             </propertyGroup>
             <class name="io.integon.JwtAuthMediator"/>
