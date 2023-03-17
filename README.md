@@ -16,7 +16,7 @@ Add the following dependencies to your pom.xml file:
 <dependency>
     <groupId>com.nimbusds</groupId>
     <artifactId>nimbus-jose-jwt</artifactId>
-    <version>8.20</version>
+    <version>9.30.1</version>
 </dependency>
 ```
 
