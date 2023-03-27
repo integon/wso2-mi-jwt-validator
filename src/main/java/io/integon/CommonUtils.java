@@ -32,8 +32,9 @@ public class CommonUtils {
     public static boolean containsUrl(String jwksUrl) {
         Pattern pattern = Pattern.compile(URL_REGEX);
         Matcher matcher = pattern.matcher(jwksUrl);
-        log.debug("The url is valid: " + matcher.find());
-        return matcher.find();
+        boolean result = matcher.find();
+        log.debug("The url is valid: " + result);
+        return result;
     }
 
     /**

@@ -97,10 +97,8 @@ public class JwtAuthHandler implements Handler {
         }
         // If jwksEnvVariable is set, check if the environment variable contains a valid
         // URL
-        if (jwksEnvVariable != null && System.getenv().get(jwksEnvVariable) != null) {
-            if (CommonUtils.containsUrl(System.getenv().get(jwksEnvVariable))) {
+        if (jwksEnvVariable != null && System.getenv().get(jwksEnvVariable) != null && CommonUtils.containsUrl(System.getenv().get(jwksEnvVariable))) {
                 jwksEndpoint = System.getenv().get(jwksEnvVariable);
-            }
         } else {
             // Check if the JWKS endpoint
             if (jwksEndpoint == null || jwksEndpoint.isEmpty()) {
@@ -108,7 +106,6 @@ public class JwtAuthHandler implements Handler {
                 return false;
             }
         }
-
         // Set the cache timeouts
         validator.setCacheTimeouts(jwksTimeout, jwksRefreshTime);
 
