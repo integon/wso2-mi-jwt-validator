@@ -11,7 +11,7 @@ Add the following dependencies to your pom.xml file:
 <dependency>
     <groupId>io.integon</groupId>
     <artifactId>wso2-mi-jwt-validator</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
 </dependency>
 <dependency>
     <groupId>com.nimbusds</groupId>
