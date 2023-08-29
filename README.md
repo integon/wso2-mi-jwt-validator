@@ -11,7 +11,7 @@ Add the following dependencies to your pom.xml file:
 <dependency>
   <groupId>io.integon.wso2mi.jwt</groupId>
   <artifactId>wso2-mi-jwt-validator</artifactId>
-  <version>1.1.0</version>
+  <version>1.1.1</version>
 </dependency>
 <dependency>
     <groupId>com.nimbusds</groupId>
@@ -24,7 +24,7 @@ These dependencies are required for the wso2-mi-jwt-validator to work. The wso2-
 
 ### Without pom.xml
 Add the following .jar Files to the MI Folder "/home/wso2carbon/wso2mi-{version}/lib"
-- wso2-mi-jwt-validator-1.0.0.jar (or the latest version)
+- wso2-mi-jwt-validator-1.1.1.jar (or the latest version)
 - nimbus-jose-jwt-9.30.1.jar (or the latest version)
 
 Both .jar files are available on the Maven Central Repository. You can find the latest version [here](https://s01.oss.sonatype.org/service/local/repositories/releases/content/io/integon/wso2mi/jwt/wso2-mi-jwt-validator/1.1.0/wso2-mi-jwt-validator-1.1.0.jar) and [here](https://mvnrepository.com/artifact/com.nimbusds/nimbus-jose-jwt).
