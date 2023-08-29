@@ -29,7 +29,6 @@ public class JWTValidator {
     private JWK jwk = null;
     private long ttl = 60 * 60 * 1000; // 1 hour
     private long refreshTimeout = 30 * 60 * 1000; // 30 minutes
-    private JWSVerifier verifier = null;
     private RSAPublicKey publicKey = null;
 
     private HashMap<String, Boolean> jtiMap;
@@ -65,10 +64,8 @@ public class JWTValidator {
         getAndVerifyJWKByKid(signedJWT);
         convertJWKToPublicKey(jwk);
 
-        if (verifier == null) {
-            verifier = new RSASSAVerifier(publicKey);
-            log.debug("Verifier created successfully");
-        }
+        JWSVerifier verifier = new RSASSAVerifier(publicKey);
+        log.debug("Verifier created successfully");
 
         // Create a verifier using the public RSA key
         if (!signedJWT.verify(verifier)) {
@@ -212,10 +209,8 @@ public class JWTValidator {
 
     private void convertJWKToPublicKey(JWK jwk) throws Exception {
         try {
-            if (publicKey == null) {
-                publicKey = ((RSAKey) jwk).toRSAPublicKey();
-                log.debug("Converted JWK to RSA public key");
-            }
+            publicKey = ((RSAKey) jwk).toRSAPublicKey();
+            log.debug("Converted JWK to RSA public key");
         } catch (JOSEException e) {
             clearCache();
             log.error("Failed to convert JWK to RSA public key: " + e.getMessage());
@@ -243,12 +238,10 @@ public class JWTValidator {
             throw new Exception("Invalid JWT token");
         }
         // Get the JWK with the matching "kid"
+        jwk = jwkSet.getKeyByKeyId(kid);
         if (jwk == null) {
-            jwk = jwkSet.getKeyByKeyId(kid);
-            if (jwk == null) {
-                log.debug(kid + " not found in JWKS Endpoint: " + cachedJwksEndpoint);
-                throw new Exception("Failed to validate JWT using the provided JWKS");
-            }
+            log.debug(kid + " not found in JWKS Endpoint: " + cachedJwksEndpoint);
+            throw new Exception("Failed to validate JWT using the provided JWKS");
         }
         log.debug(kid + " found in JWKS Endpoint: " + cachedJwksEndpoint);
     }

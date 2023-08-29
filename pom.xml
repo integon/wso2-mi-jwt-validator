@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>io.integon.wso2mi.jwt</groupId>
   <artifactId>wso2-mi-jwt-validator</artifactId>
-  <version>1.1.0</version>
+  <version>1.1.1</version>
 
   <name>wso2-mi-jwt-validator</name>
   <description>A brief description of my project.</description>
