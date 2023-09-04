@@ -1,6 +1,6 @@
 package io.integon;
 
-
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.logging.Log;
@@ -10,6 +10,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2Sender;
 import org.apache.synapse.rest.Handler;
+import org.json.JSONObject;
 
 /**
  * This class is used to validate the JWT token Implements the Handler interface
@@ -34,6 +35,8 @@ public class JwtAuthHandler implements Handler {
 
     private JWTValidator validator = null;
 
+    private String forwardToken;
+
     @Override
     public void addProperty(String s, Object o) {
         // To change body of implemented methods use File | Settings | File Templates.
@@ -51,7 +54,7 @@ public class JwtAuthHandler implements Handler {
      * valid
      * 
      * @param messageContext
-     *            Synapse message context
+     *                       Synapse message context
      * @return true if the request is valid, false if the request is invalid
      */
     @Override
@@ -97,8 +100,9 @@ public class JwtAuthHandler implements Handler {
         }
         // If jwksEnvVariable is set, check if the environment variable contains a valid
         // URL
-        if (jwksEnvVariable != null && System.getenv().get(jwksEnvVariable) != null && CommonUtils.containsUrl(System.getenv().get(jwksEnvVariable))) {
-                jwksEndpoint = System.getenv().get(jwksEnvVariable);
+        if (jwksEnvVariable != null && System.getenv().get(jwksEnvVariable) != null
+                && CommonUtils.containsUrl(System.getenv().get(jwksEnvVariable))) {
+            jwksEndpoint = System.getenv().get(jwksEnvVariable);
         } else {
             // Check if the JWKS endpoint
             if (jwksEndpoint == null || jwksEndpoint.isEmpty()) {
@@ -164,7 +168,11 @@ public class JwtAuthHandler implements Handler {
                 handleException(e.getMessage(), messageContext);
             }
         }
-        log.debug("JWT validation successful");
+
+        if (forwardToken != null && forwardToken.equals("true")) {
+            log.debug("Set JWT token in the message context");
+            messageContext.setProperty("X-JWT", jwtToken);
+        }
         return true;
     }
 
@@ -172,7 +180,7 @@ public class JwtAuthHandler implements Handler {
      * This method is called when the response is sent back to the client
      * 
      * @param messageContext
-     *            Synapse message context
+     *                       Synapse message context
      * @return true if the response is valid, false if the response is invalid
      */
     @Override
@@ -184,9 +192,9 @@ public class JwtAuthHandler implements Handler {
      * This method handles the exceptions thrown by the JWTValidator
      * 
      * @param message
-     *            the error message
+     *                       the error message
      * @param messageContext
-     *            Synapse message context
+     *                       Synapse message context
      */
     protected void handleException(String message, MessageContext messageContext) {
         // Create a SOAPFactory and an XML payload
@@ -225,80 +233,103 @@ public class JwtAuthHandler implements Handler {
     public String getJwksEndpoint() {
         return jwksEndpoint;
     }
+
     // Interface handler injection
     public void setJwksEndpoint(String jwks) {
         this.jwksEndpoint = jwks;
     }
+
     // Interface handler injection
     public String getJwksEnvVariable() {
         return jwksEnvVariable;
     }
+
     // Interface handler injection
     public void setJwksEnvVariable(String jwksEnv) {
         jwksEnvVariable = jwksEnv;
     }
+
     // Interface handler injection
     public String getJwtHeader() {
         return jwtHeader;
     }
+
     // Interface handler injection
     public void setJwtHeader(String header) {
         this.jwtHeader = header;
     }
+
     // Interface handler injection
     public String getIatClaim() {
         return iatClaim;
     }
+
     // Interface handler injection
     public void setIatClaim(String iat) {
         iatClaim = iat;
     }
+
     // Interface handler injection
     public String getIssClaim() {
         return issClaim;
     }
+
     // Interface handler injection
     public void setIssClaim(String iss) {
         issClaim = iss;
     }
+
     // Interface handler injection
     public String getAudClaim() {
         return audClaim;
     }
+
     // Interface handler injection
     public void setAudClaim(String aud) {
         audClaim = aud;
     }
+
     // Interface handler injection
     public String getSubClaim() {
         return subClaim;
     }
+
     // Interface handler injection
     public void setSubClaim(String sub) {
         this.subClaim = sub;
     }
+
     // Interface handler injection
     public String getJtiClaim() {
         return jtiClaim;
     }
+
     // Interface handler injection
     public void setJtiClaim(String jti) {
         jtiClaim = jti;
     }
+
     // Interface handler injection
     public String getJwksTimeout() {
         return jwksTimeout;
     }
+
     // Interface handler injection
     public void setJwksTimeout(String timeout) {
         this.jwksTimeout = timeout;
     }
+
     // Interface handler injection
     public String getJwksRefreshTime() {
         return jwksRefreshTime;
     }
+
     // Interface handler injection
     public void setJwksRefreshTime(String refresh) {
         this.jwksRefreshTime = refresh;
+    }
+
+    public void setForwardToken(String forwardToken) {
+        this.forwardToken = forwardToken;
     }
 }

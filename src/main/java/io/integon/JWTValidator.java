@@ -1,6 +1,5 @@
 package io.integon;
 
-
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.JWSVerifier;
@@ -17,6 +16,7 @@ import java.util.Date;
 import java.util.HashMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 /**
  * This class validates the JWT token using the provided JWKS endpoint
  */
@@ -43,9 +43,9 @@ public class JWTValidator {
      * token is validated using the public key
      * 
      * @param jwtToken
-     *            The JWT token to validate
+     *                     The JWT token to validate
      * @param jwksEndpoint
-     *            The JWKS endpoint to use for validation
+     *                     The JWKS endpoint to use for validation
      * @return true if the JWT token is valid
      * @throws Exception
      */
@@ -81,7 +81,7 @@ public class JWTValidator {
      * token is valid
      * 
      * @param jwtToken
-     *            The JWT token to check
+     *                 The JWT token to check
      * @return true if the JWT token is expired
      * @throws Exception
      */
@@ -103,15 +103,16 @@ public class JWTValidator {
         log.debug("JWT token is not expired");
         return false;
     }
+
     /**
      * Checks if the claims in the JWT token are valid or have the expected values
      * This method only gets called if the JWT token is valid and not expired and
      * there are claims to validate
      * 
      * @param jwtToken
-     *            The JWT token to check
+     *                 The JWT token to check
      * @param claims
-     *            The claims to validate
+     *                 The claims to validate
      * @return true if the claims are valid
      * @throws Exception
      */
@@ -149,14 +150,21 @@ public class JWTValidator {
             log.debug("JWT token issuer claim matches the expected value");
         }
         if (claims.get("sub") != null) {
-            if (!signedJWT.getJWTClaimsSet().getSubject().equals(claims.get("sub").toString())) {
+            if (!signedJWT.getJWTClaimsSet().getSubject().matches(claims.get("sub").toString())) {
                 log.debug("JWT token subject claim does not match the expected value: " + claims.get("sub").toString());
                 throw new Exception("JWT token subject claim does not match the expected value");
             }
             log.debug("JWT token subject claim matches the expected value");
         }
         if (claims.get("aud") != null) {
-            if (!signedJWT.getJWTClaimsSet().getAudience().contains(claims.get("aud").toString())) {
+            boolean audMatch = false;
+            for (String audience : signedJWT.getJWTClaimsSet().getAudience()) {
+                if (audience.matches(claims.get("aud").toString())) {
+                    audMatch = true;
+                }
+
+            }
+            if (!audMatch) {
                 log.debug(
                         "JWT token audience claim does not match the expected value: " + claims.get("aud").toString());
                 throw new Exception("JWT token audience claim does not match the expected value");
@@ -204,7 +212,7 @@ public class JWTValidator {
      * @param jwk
      *            the JWK to be converted
      * @throws Exception
-     *             if the JWK could not be converted to a RSA public key
+     *                   if the JWK could not be converted to a RSA public key
      */
 
     private void convertJWKToPublicKey(JWK jwk) throws Exception {
@@ -223,12 +231,13 @@ public class JWTValidator {
      * header.
      * 
      * @param signedJWT
-     *            the signed JWT token
+     *                  the signed JWT token
      * @return the JWK object that corresponds to the given key id in the JWT
      *         header.
      * @throws Exception
-     *             if the JWT token is invalid or if there is no corresponding JWK
-     *             found in the JWKS set.
+     *                   if the JWT token is invalid or if there is no corresponding
+     *                   JWK
+     *                   found in the JWKS set.
      */
     private void getAndVerifyJWKByKid(SignedJWT signedJWT) throws Exception {
         JWSHeader header = signedJWT.getHeader();
@@ -262,9 +271,9 @@ public class JWTValidator {
      * endpoint.
      * 
      * @param jwksEndpoint
-     *            The JWKS endpoint to retrieve the JwkSet from.
+     *                     The JWKS endpoint to retrieve the JwkSet from.
      * @throws Exception
-     *             If there is a parse exception while loading the JwkSet.
+     *                   If there is a parse exception while loading the JwkSet.
      */
     private void loadAndCacheJWKSet(String jwksEndpoint) throws Exception {
 
@@ -297,9 +306,9 @@ public class JWTValidator {
      * Set the cache timeouts for the JWK set.
      * 
      * @param jwksTimeout
-     *            the time to live for the cached JWK set
+     *                        the time to live for the cached JWK set
      * @param jwksRefreshTime
-     *            the refresh time for the cached JWK set
+     *                        the refresh time for the cached JWK set
      */
     public void setCacheTimeouts(String jwksTimeout, String jwksRefreshTime) {
         if (isLongParseable(jwksTimeout)) {
@@ -316,11 +325,12 @@ public class JWTValidator {
             log.debug(jwksRefreshTime + " is not a valid value for the JWK refresh timeout. Defaulting to 30 minutes.");
         }
     }
+
     /**
      * Checks if the given string is parseable as a long.
      * 
      * @param s
-     *            the string to be checked
+     *          the string to be checked
      * @return true if the string is parseable as a long, false otherwise
      */
     private boolean isLongParseable(String s) {

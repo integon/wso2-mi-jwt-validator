@@ -1,6 +1,6 @@
 package io.integon;
 
-
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.logging.Log;
@@ -10,6 +10,7 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
+import org.json.JSONObject;
 
 public class JwtAuthMediator extends AbstractMediator {
 
@@ -31,6 +32,8 @@ public class JwtAuthMediator extends AbstractMediator {
 
     private JWTValidator validator = null;
 
+    private String forwardToken;
+
     /**
      * This method is called when the request is received by the API Get properties
      * from the message context and set them to the class variables Initialize the
@@ -39,7 +42,7 @@ public class JwtAuthMediator extends AbstractMediator {
      * claims if they are set
      * 
      * @param messageContext
-     *            Synapse message context
+     *                       Synapse message context
      * @return true if the JWT token is valid
      * @throws SynapseException
      */
@@ -125,16 +128,24 @@ public class JwtAuthMediator extends AbstractMediator {
             }
         }
         log.debug("JWT validation successful");
+
+        log.debug("Forward token: " + forwardToken);
+        if (forwardToken != null && forwardToken.equals("true")) {
+            log.debug("Set JWT token in the message context");
+            messageContext.setProperty("X-JWT", jwtToken);
+
+        }
         return true;
     }
+
     /**
      * Retrieve the properties from the message context Check if the required
      * properties are set If not, throw an exception
      * 
      * @param messageContext
-     *            Synapse message context
+     *                       Synapse message context
      * @throws Exception
-     *             if a required property is not set
+     *                   if a required property is not set
      */
     private void applyProperties(MessageContext messageContext) throws Exception {
         clearProperties();
@@ -170,8 +181,11 @@ public class JwtAuthMediator extends AbstractMediator {
         }
         jwksTimeout = (String) messageContext.getProperty("jwksTimeout");
         jwksRefreshTime = (String) messageContext.getProperty("jwksRefreshTime");
+        forwardToken = (String) messageContext.getProperty("forwardToken");
+
         log.debug("Properties set");
     }
+
     /**
      * This method is used to clear the properties
      */
@@ -193,9 +207,9 @@ public class JwtAuthMediator extends AbstractMediator {
      * This method is used to handle the exceptions
      * 
      * @param message
-     *            the error message
+     *                       the error message
      * @param messageContext
-     *            Synapse message context
+     *                       Synapse message context
      */
     protected void handleException(String message, MessageContext messageContext) {
         // Create a SOAPFactory and an XML payload
