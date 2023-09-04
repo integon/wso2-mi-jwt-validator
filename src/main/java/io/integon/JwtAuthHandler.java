@@ -1,5 +1,6 @@
 package io.integon;
 
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.logging.Log;
@@ -9,6 +10,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2Sender;
 import org.apache.synapse.rest.Handler;
+import org.json.JSONObject;
 
 /**
  * This class is used to validate the JWT token Implements the Handler interface
@@ -169,7 +171,12 @@ public class JwtAuthHandler implements Handler {
 
         if (forwardToken != null && forwardToken.equals("true")) {
             log.debug("Set JWT token in the message context");
-            messageContext.setProperty("X-JWT", jwtToken);
+            // Decode the JWT payload and add it to the transport headers
+            String decodedToken = new String(Base64.getDecoder().decode(jwtToken.split("\\.")[1]));
+
+            JSONObject jsonObject = new JSONObject(decodedToken);
+
+            messageContext.setProperty("X-JWT", jsonObject.toString());
         }
         return true;
     }
