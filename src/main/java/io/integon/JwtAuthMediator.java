@@ -1,6 +1,5 @@
 package io.integon;
 
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.logging.Log;
@@ -10,7 +9,6 @@ import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.mediators.AbstractMediator;
-import org.json.JSONObject;
 
 public class JwtAuthMediator extends AbstractMediator {
 

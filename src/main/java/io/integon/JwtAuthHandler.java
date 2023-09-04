@@ -1,6 +1,5 @@
 package io.integon;
 
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.logging.Log;
@@ -10,7 +9,6 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2Sender;
 import org.apache.synapse.rest.Handler;
-import org.json.JSONObject;
 
 /**
  * This class is used to validate the JWT token Implements the Handler interface
