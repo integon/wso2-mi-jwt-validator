@@ -40,7 +40,7 @@ public class JwtAuthMediator extends AbstractMediator {
      * JWTValidator Isolate the JWT token from the Authorization header Validate the
      * JWT token with the JWTValidator Check if the JWT token is expired Check
      * claims if they are set
-     * 
+     *
      * @param messageContext
      *                       Synapse message context
      * @return true if the JWT token is valid
@@ -146,7 +146,7 @@ public class JwtAuthMediator extends AbstractMediator {
     /**
      * Retrieve the properties from the message context Check if the required
      * properties are set If not, throw an exception
-     * 
+     *
      * @param messageContext
      *                       Synapse message context
      * @throws Exception
@@ -210,7 +210,7 @@ public class JwtAuthMediator extends AbstractMediator {
 
     /**
      * This method is used to handle the exceptions
-     * 
+     *
      * @param message
      *                       the error message
      * @param messageContext
@@ -223,11 +223,12 @@ public class JwtAuthMediator extends AbstractMediator {
         // Get Transport Headers from the message context
         org.apache.axis2.context.MessageContext axis2MessageContext = ((Axis2MessageContext) messageContext)
                 .getAxis2MessageContext();
-        Object headers = axis2MessageContext.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-
-        // Clear the transport headers
-        Map headersMap = (Map) headers;
-        headersMap.clear();
+        Object transportHeaders = axis2MessageContext.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+        if(transportHeaders != null) {
+            // Clear the transport headers
+            Map transportHeadersMap = (Map) transportHeaders;
+            transportHeadersMap.clear();
+        }
 
         // Set a property in the message context to indicate an error
         messageContext.setProperty(SynapseConstants.ERROR_MESSAGE, message);
