@@ -120,6 +120,7 @@ public class JwtAuthHandler implements Handler {
             log.debug("isValidJWT: " + isValidJWT);
         } catch (Exception e) {
             handleException(e.getMessage(), messageContext);
+            return false;
         }
         // Check if the token is expired
         boolean isTokenExpired;
@@ -127,9 +128,11 @@ public class JwtAuthHandler implements Handler {
             isTokenExpired = validator.isTokenExpired(jwtToken);
             if (isTokenExpired) {
                 handleException("JWT token is expired", messageContext);
+                return false;
             }
         } catch (Exception e) {
             handleException(e.getMessage(), messageContext);
+            return false;
         }
         // Check if the claims are valid
         HashMap<String, String> claims = new HashMap<String, String>();
@@ -166,6 +169,7 @@ public class JwtAuthHandler implements Handler {
                 validator.areClaimsValid(jwtToken, claims);
             } catch (Exception e) {
                 handleException(e.getMessage(), messageContext);
+                return false;
             }
         }
 
