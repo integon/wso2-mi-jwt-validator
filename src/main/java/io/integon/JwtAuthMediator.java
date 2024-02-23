@@ -56,6 +56,7 @@ public class JwtAuthMediator extends AbstractMediator {
             applyProperties(messageContext);
         } catch (Exception e) {
             handleException(e.getMessage(), messageContext);
+            return false;
         }
         // initialize the JWTValidator
         if (validator == null || cachedTimeValidator + cachedTimeValidatorReset < System.currentTimeMillis()) {
@@ -66,12 +67,14 @@ public class JwtAuthMediator extends AbstractMediator {
         if (!jwtToken.trim().startsWith("Bearer")) {
             log.debug("Invalid JWT format: " + jwtToken);
             handleException("Invalid JWT format", messageContext);
+            return false;
         } else {
             // Remove "Bearer " from the token
             jwtToken = jwtToken.substring(7);
             if (jwtToken == null || jwtToken.isEmpty()) {
                 log.debug("JWT token not found in the message");
                 handleException("JWT token not found in the message", messageContext);
+                return false;
             }
         }
         // If jwksEnvVariable is set, check if the environment variable contains a valid
@@ -84,6 +87,7 @@ public class JwtAuthMediator extends AbstractMediator {
             if (jwksEndpoint == null || jwksEndpoint.isEmpty()) {
                 log.debug("JWKS endpoint not found in the message context or environment variable");
                 handleException("JWKS endpoint not found", messageContext);
+                return false;
             }
         }
 
@@ -97,15 +101,18 @@ public class JwtAuthMediator extends AbstractMediator {
             log.debug("isValidJWT: " + isValidJWT);
         } catch (Exception e) {
             handleException(e.getMessage(), messageContext);
+            return false;
         }
         boolean isTokenExpired;
         try {
             isTokenExpired = validator.isTokenExpired(jwtToken);
             if (isTokenExpired) {
                 handleException("JWT token is expired", messageContext);
+                return false;
             }
         } catch (Exception e) {
             handleException(e.getMessage(), messageContext);
+            return false;
         }
 
         // retrieve the sub claim from the message context
@@ -129,6 +136,7 @@ public class JwtAuthMediator extends AbstractMediator {
                 validator.areClaimsValid(jwtToken, claims);
             } catch (Exception e) {
                 handleException(e.getMessage(), messageContext);
+                return false;
             }
         }
         log.debug("JWT validation successful");
