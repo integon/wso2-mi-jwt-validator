@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.http.HttpStatus;
 import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
@@ -232,7 +233,10 @@ public class JwtAuthMediator extends AbstractMediator {
 
         // Set a property in the message context to indicate an error
         messageContext.setProperty(SynapseConstants.ERROR_MESSAGE, message);
-        messageContext.setProperty(SynapseConstants.ERROR_CODE, "401");
+        messageContext.setProperty(SynapseConstants.ERROR_CODE, HttpStatus.SC_UNAUTHORIZED);
+
+        // Set the response status code
+        axis2MessageContext.setProperty(SynapseConstants.HTTP_SC, HttpStatus.SC_UNAUTHORIZED);
 
         // Remove the entity body from the response
         axis2MessageContext.setProperty("NO_ENTITY_BODY", Boolean.FALSE);
