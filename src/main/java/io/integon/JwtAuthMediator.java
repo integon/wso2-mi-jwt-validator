@@ -10,6 +10,7 @@ import org.apache.synapse.MessageContext;
 import org.apache.synapse.SynapseConstants;
 import org.apache.synapse.SynapseException;
 import org.apache.synapse.core.axis2.Axis2MessageContext;
+import org.apache.synapse.core.axis2.Axis2Sender;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.json.JSONObject;
 
@@ -34,6 +35,8 @@ public class JwtAuthMediator extends AbstractMediator {
     private JWTValidator validator = null;
 
     private String forwardToken;
+    
+    private String respond;
 
     /**
      * This method is called when the request is received by the API Get properties
@@ -188,6 +191,7 @@ public class JwtAuthMediator extends AbstractMediator {
         jwksTimeout = (String) messageContext.getProperty("jwksTimeout");
         jwksRefreshTime = (String) messageContext.getProperty("jwksRefreshTime");
         forwardToken = (String) messageContext.getProperty("forwardToken");
+        respond = (String) messageContext.getProperty("respond");
 
         log.debug("Properties set");
     }
@@ -245,7 +249,21 @@ public class JwtAuthMediator extends AbstractMediator {
         axis2MessageContext.setProperty("messageType", "application/json");
         axis2MessageContext.setProperty("ContentType", "application/json");
 
-        // Throw a SynapseException to signal an error
-        throw new SynapseException(message);
+        // Respond from mediator if respond is 'true' else throw SynapseException 
+        if (respond != null && respond.equals("true")){
+            log.debug("Respond from Mediator");
+            // Set the "to" property to null
+            messageContext.setTo(null);
+            messageContext.setResponse(true);
+
+            axis2MessageContext.getOperationContext().setProperty(org.apache.axis2.Constants.RESPONSE_WRITTEN, "SKIP");
+
+            Axis2Sender.sendBack(messageContext);
+
+        } else {
+            // Throw a SynapseException to signal an error
+            log.debug("Throw a SynapseException to trigger faultSequence");
+            throw new SynapseException(message);
+        }        
     }
 }
