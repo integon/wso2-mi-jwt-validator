@@ -11,7 +11,7 @@ Add the following dependencies to your pom.xml file:
 <dependency>
   <groupId>io.integon.wso2mi.jwt</groupId>
   <artifactId>wso2-mi-jwt-validator</artifactId>
-  <version>1.1.1</version>
+  <version>1.1.3</version>
 </dependency>
 <dependency>
     <groupId>com.nimbusds</groupId>
@@ -24,25 +24,26 @@ These dependencies are required for the wso2-mi-jwt-validator to work. The wso2-
 
 ### Without pom.xml
 Add the following .jar Files to the MI Folder "/home/wso2carbon/wso2mi-{version}/lib"
-- wso2-mi-jwt-validator-1.1.1.jar (or the latest version)
+- wso2-mi-jwt-validator-1.1.3.jar (or the latest version)
 - nimbus-jose-jwt-9.30.1.jar (or the latest version)
 
-Both .jar files are available on the Maven Central Repository. You can find the latest version [here](https://s01.oss.sonatype.org/service/local/repositories/releases/content/io/integon/wso2mi/jwt/wso2-mi-jwt-validator/1.1.0/wso2-mi-jwt-validator-1.1.0.jar) and [here](https://mvnrepository.com/artifact/com.nimbusds/nimbus-jose-jwt).
+Both .jar files are available on the Maven Central Repository. You can find the latest version [here](https://s01.oss.sonatype.org/service/local/repositories/releases/content/io/integon/wso2mi/jwt/wso2-mi-jwt-validator/1.1.3/wso2-mi-jwt-validator-1.1.3.jar) and [here](https://mvnrepository.com/artifact/com.nimbusds/nimbus-jose-jwt).
 
 ## Usage
 ### Available Properties (Custom Handler)
-| Parameter Name  | Description                                                                                                                                  | How to refrence                                                                                          |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| jwtHeader       | The name of the header that contains the JWT Token.                                                                                          | ```<property name="jwtHeader" value="Authorization"/>```                                                 |
-| iatClaim        | The value in seconds will be used to test if the jwt token is not older than the provided value.                                             | ```<property name="iatClaim" value="1800"/>```<br>```<property name="iatClaim" value=""/>```             |
-| issClaim        | The value of the iss claim that is expected to be present in the JWT Token.                                                                  | ```<property name="issClaim" value="issuer"/>```<br>```<property name="issClaim" value=""/>```           |
-| subClaim        | The value of the sub claim that is expected to be present in the JWT Token.                                                                  | ```<property name="subClaim" value="subject"/>```<br>```<property name="subClaim" value=""/>```          |
-| audClaim        | The value of the aud claim that is expected to be present in the JWT Token.                                                                  | ```<property name="audClaim" value="audience"/>```<br>```<property name="audClaim" value=""/>```         |
-| jtiClaim        | If the jti claim set to "enabled", the jti claim will be checked against a cache and will be denied if the same Token has already been used. | ```<property name="jtiClaim" value="enabled"/>```                                                        |
-| jwksEndpoint    | The URL of the JWKS Endpoint.                                                                                                                | ```<property name="jwksEndpoint" value="https://apim.ch/oauth2/jwks"/>```                                |
-| jwksEnvVariable | The name of the environment variable that contains the URL of the JWKS Endpoint.                                                             | ```<property name="jwksEnvVariable" value="jwksEndpoint"/>```                                            |
-| jwksTimeout     | The timeout in seconds for the JWKS Endpoint Caching.                                                                                        | ```<property name="jwksTimeout" value="30"/>```<br>```<property name="jwksTimeout" value=""/>```         |
-| jwksRefreshTime | The time in seconds after which the JWKS Endpoint is refreshed.                                                                              | ```<property name="jwksRefreshTime" value="15"/>```<br>```<property name="jwksRefreshTime" value=""/>``` |
+| Parameter Name  | Description                                                  | How to refrence                                              |
+| --------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| jwtHeader       | The name of the header that contains the JWT Token.          | ```<property name="jwtHeader" value="Authorization"/>```     |
+| iatClaim        | The value in seconds will be used to test if the jwt token is not older than the provided value. | ```<property name="iatClaim" value="1800"/>```<br>```<property name="iatClaim" value=""/>``` |
+| issClaim        | The value of the iss claim that is expected to be present in the JWT Token. | ```<property name="issClaim" value="issuer"/>```<br>```<property name="issClaim" value=""/>``` |
+| subClaim        | The value of the sub claim that is expected to be present in the JWT Token. | ```<property name="subClaim" value="subject"/>```<br>```<property name="subClaim" value=""/>``` |
+| audClaim        | The value of the aud claim that is expected to be present in the JWT Token. | ```<property name="audClaim" value="audience"/>```<br>```<property name="audClaim" value=""/>``` |
+| jtiClaim        | If the jti claim set to "enabled", the jti claim will be checked against a cache and will be denied if the same Token has already been used. | ```<property name="jtiClaim" value="enabled"/>```            |
+| jwksEndpoint    | The URL of the JWKS Endpoint.                                | ```<property name="jwksEndpoint" value="https://apim.ch/oauth2/jwks"/>``` |
+| jwksEnvVariable | The name of the environment variable that contains the URL of the JWKS Endpoint. | ```<property name="jwksEnvVariable" value="jwksEndpoint"/>``` |
+| jwksTimeout     | The timeout in seconds for the JWKS Endpoint Caching.        | ```<property name="jwksTimeout" value="30"/>```<br>```<property name="jwksTimeout" value=""/>``` |
+| jwksRefreshTime | The time in seconds after which the JWKS Endpoint is refreshed. | ```<property name="jwksRefreshTime" value="15"/>```<br>```<property name="jwksRefreshTime" value=""/>``` |
+| forwardToken    | If set to 'true' the decoded JWT will be set to the message context property 'X-JWT' in json. | ```<property name="forwardToken" value="true"/>```           |
 
 
 The following Parameters can be left empty:
@@ -57,18 +58,20 @@ The following Parameters can be left empty:
 - jwksRefreshTime (default will be set: 3000)
 
 ### Available Properties (Custom Mediator)
-| Parameter Name  | Description                                                                                                                                  | How to refrence                                                                                                              |
-| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| jwtToken        | The jwt token that is to be validated.                                                                                                       | ```<property name="jwtToken" expression="$trp:Authorization"/>```<br>```<property name="jwtToken" expression="$ctx:jwt"/>``` |
-| iatClaim        | The value in seconds will be used to test if the jwt token is not older than the provided value.                                             | ```<property name="iatClaim" value="1800"/>```<br>```<property name="iatClaim" value=""/>```                                 |
-| issClaim        | The value of the iss claim that is expected to be present in the JWT Token.                                                                  | ```<property name="issClaim" value="issuer"/>```<br>```<property name="issClaim" value=""/>```                               |
-| subClaim        | The value of the sub claim that is expected to be present in the JWT Token.                                                                  | ```<property name="subClaim" value="subject"/>```<br>```<property name="subClaim" value=""/>```                              |
-| audClaim        | The value of the aud claim that is expected to be present in the JWT Token.                                                                  | ```<property name="audClaim" value="audience"/>```<br>```<property name="audClaim" value=""/>```                             |
-| jtiClaim        | If the jti claim set to "enabled", the jti claim will be checked against a cache and will be denied if the same Token has already been used. | ```<property name="jtiClaim" value="enabled"/>```                                                                            |
-| jwksEndpoint    | The URL of the JWKS Endpoint.                                                                                                                | ```<property name="jwksEndpoint" value="https://apim.ch/oauth2/jwks"/>```                                                    |
-| jwksEnvVariable | The name of the environment variable that contains the URL of the JWKS Endpoint.                                                             | ```<property name="jwksEnvVariable" value="jwksEndpoint"/>```                                                                |
-| jwksTimeout     | The timeout in seconds for the JWKS Endpoint Caching.                                                                                        | ```<property name="jwksTimeout" value="30"/>```<br>```<property name="jwksTimeout" value=""/>```                             |
-| jwksRefreshTime | The time in seconds after which the JWKS Endpoint is refreshed.                                                                              |
+| Parameter Name  | Description                                                  | How to refrence                                              |
+| --------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
+| jwtToken        | The jwt token that is to be validated.                       | ```<property name="jwtToken" expression="$trp:Authorization"/>```<br>```<property name="jwtToken" expression="$ctx:jwt"/>``` |
+| iatClaim        | The value in seconds will be used to test if the jwt token is not older than the provided value. | ```<property name="iatClaim" value="1800"/>```<br>```<property name="iatClaim" value=""/>``` |
+| issClaim        | The value of the iss claim that is expected to be present in the JWT Token. | ```<property name="issClaim" value="issuer"/>```<br>```<property name="issClaim" value=""/>``` |
+| subClaim        | The value of the sub claim that is expected to be present in the JWT Token. | ```<property name="subClaim" value="subject"/>```<br>```<property name="subClaim" value=""/>``` |
+| audClaim        | The value of the aud claim that is expected to be present in the JWT Token. | ```<property name="audClaim" value="audience"/>```<br>```<property name="audClaim" value=""/>``` |
+| jtiClaim        | If the jti claim set to "enabled", the jti claim will be checked against a cache and will be denied if the same Token has already been used. | ```<property name="jtiClaim" value="enabled"/>```            |
+| jwksEndpoint    | The URL of the JWKS Endpoint.                                | ```<property name="jwksEndpoint" value="https://apim.ch/oauth2/jwks"/>``` |
+| jwksEnvVariable | The name of the environment variable that contains the URL of the JWKS Endpoint. | ```<property name="jwksEnvVariable" value="jwksEndpoint"/>``` |
+| jwksTimeout     | The timeout in seconds for the JWKS Endpoint Caching.        | ```<property name="jwksTimeout" value="30"/>```<br>```<property name="jwksTimeout" value=""/>``` |
+| jwksRefreshTime | The time in seconds after which the JWKS Endpoint is refreshed. | ```<property name="jwksRefreshTime" value="15"/>```<br/>```<property name="jwksRefreshTime" value=""/>``` |
+| forwardToken    | If set to 'true' the decoded JWT will be set to the message context property 'X-JWT' in json. | ```<property name="forwardToken" value="true"/>```           |
+| respond         | If set to 'true' the mediator will respond without triggering the faultSequence. | ```<property name="respond" value="true"/>```                |
 
 The following Parameters can be left empty:
 - jwksEndpoint (IF jwksEnvVariable is set)
@@ -80,6 +83,8 @@ The following Parameters can be left empty:
 - jtiClaim (Claim will not be checked)
 - jwksTimeout (default will be set: 6000)
 - jwksRefreshTime (default will be set: 3000)
+- forwardToken (default: false)
+- respond (default: false)
 
 ### Examples
 #### Engage JWT Handler for MI APIs
@@ -266,5 +271,4 @@ The following examples show how to engage the JWT Handler for MI APIs. Use Cases
 	</target>
 </proxy>
 ```
-
 
