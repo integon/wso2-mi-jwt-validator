@@ -1,7 +1,7 @@
 # wso2-mi-jwt-validator
 The ws02-mi-jwt-validator is a custom handler and mediator for the WSO2 Micro Integrator. This class can be used to validate JWT tokens against a JWKS endpoint. The class can be used as a custom handler or as a custom mediator. The following example shows how to use the class as a custom handler and mediator.
 
-The wso2-mi-jwt-validator is available on the Maven Central Repository. You can find the latest version [here](https://s01.oss.sonatype.org/service/local/repositories/releases/content/io/integon/wso2mi/jwt/wso2-mi-jwt-validator/1.1.3).
+The wso2-mi-jwt-validator is available on the Maven Central Repository. You can find the latest version [here](https://s01.oss.sonatype.org/service/local/repositories/releases/content/io/integon/wso2mi/jwt/wso2-mi-jwt-validator/1.1.4).
 
 
 ## Setup
@@ -11,7 +11,7 @@ Add the following dependencies to your pom.xml file:
 <dependency>
   <groupId>io.integon.wso2mi.jwt</groupId>
   <artifactId>wso2-mi-jwt-validator</artifactId>
-  <version>1.1.3</version>
+  <version>1.1.4</version>
 </dependency>
 <dependency>
     <groupId>com.nimbusds</groupId>
