@@ -150,7 +150,8 @@ public class JwtAuthMediator extends AbstractMediator {
             JSONObject jsonObject = new JSONObject(decodedToken);
 
             messageContext.setProperty("X-JWT", jsonObject.toString());
-
+            
+            log.debug("Forward token set to X-JWT Header");
         }
         return true;
     }
@@ -166,6 +167,7 @@ public class JwtAuthMediator extends AbstractMediator {
      */
     private void applyProperties(MessageContext messageContext) throws Exception {
         clearProperties();
+        respond = (String) messageContext.getProperty("respond");
         jwtToken = (String) messageContext.getProperty("jwtToken");
         if (jwtToken == null || jwtToken.isEmpty()) {
             throw new Exception("JWT not found in the message");
@@ -199,9 +201,8 @@ public class JwtAuthMediator extends AbstractMediator {
         jwksTimeout = (String) messageContext.getProperty("jwksTimeout");
         jwksRefreshTime = (String) messageContext.getProperty("jwksRefreshTime");
         forwardToken = (String) messageContext.getProperty("forwardToken");
-        respond = (String) messageContext.getProperty("respond");
 
-        log.debug("Properties set");
+        log.debug("applyProperties set");
     }
 
     /**
