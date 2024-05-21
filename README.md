@@ -1,7 +1,7 @@
 # wso2-mi-jwt-validator
 The wso2-mi-jwt-validator is a custom handler and mediator for the WSO2 Micro Integrator. This class can be used to validate JWT tokens against a JWKS endpoint. The class can be used as a custom handler or as a custom mediator. The following example shows how to use the class as a custom handler and mediator.
 
-The wso2-mi-jwt-validator is available on the Maven Central Repository. You can find the latest version [here](https://s01.oss.sonatype.org/service/local/repositories/releases/content/io/integon/wso2mi/jwt/wso2-mi-jwt-validator/1.1.5).
+The wso2-mi-jwt-validator is available on the Maven Central Repository. You can find the latest version [here](https://s01.oss.sonatype.org/service/local/repositories/releases/content/io/integon/wso2mi/jwt/wso2-mi-jwt-validator/1.2.0).
 
 [TOC]
 
@@ -13,7 +13,7 @@ Add the following dependencies to your pom.xml file:
 <dependency>
   <groupId>io.integon.wso2mi.jwt</groupId>
   <artifactId>wso2-mi-jwt-validator</artifactId>
-  <version>1.1.4</version>
+  <version>1.2.0</version>
 </dependency>
 <dependency>
     <groupId>com.nimbusds</groupId>
@@ -26,10 +26,10 @@ These dependencies are required for the wso2-mi-jwt-validator to work. The wso2-
 
 ### Without pom.xml
 Add the following .jar Files to the MI Folder "/home/wso2carbon/wso2mi-{version}/lib"
-- wso2-mi-jwt-validator-1.1.5.jar (or the latest version)
+- wso2-mi-jwt-validator-1.2.0.jar (or the latest version)
 - nimbus-jose-jwt-9.37.3.jar (or the latest version)
 
-Both .jar files are available on the Maven Central Repository. You can find the latest version [here](https://s01.oss.sonatype.org/service/local/repositories/releases/content/io/integon/wso2mi/jwt/wso2-mi-jwt-validator/1.1.5/wso2-mi-jwt-validator-1.1.3.jar) and [here](https://mvnrepository.com/artifact/com.nimbusds/nimbus-jose-jwt).
+Both .jar files are available on the Maven Central Repository. You can find the latest version [here](https://s01.oss.sonatype.org/service/local/repositories/releases/content/io/integon/wso2mi/jwt/wso2-mi-jwt-validator/1.2.0/wso2-mi-jwt-validator-1.2.0.jar) and [here](https://mvnrepository.com/artifact/com.nimbusds/nimbus-jose-jwt).
 
 ## Usage
 ### Available Properties (Custom Handler)
