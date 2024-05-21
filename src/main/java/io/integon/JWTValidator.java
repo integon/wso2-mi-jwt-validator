@@ -275,8 +275,7 @@ public class JWTValidator {
      * @throws Exception
      *                   If there is a parse exception while loading the JwkSet.
      */
-    private void loadAndCacheJWKSet(String jwksEndpoint) throws Exception {
-
+    private synchronized void loadAndCacheJWKSet(String jwksEndpoint) throws Exception {
         if (jwkSet == null || cachedTimeJWKSet + ttl < System.currentTimeMillis()
                 || !cachedJwksEndpoint.equals(jwksEndpoint)) {
             try {
@@ -293,12 +292,12 @@ public class JWTValidator {
         } else if (cachedTimeJWKSet + refreshTimeout < System.currentTimeMillis()) {
             try {
                 jwkSet = JWKSet.load(new URL(jwksEndpoint));
-                log.debug("JWK set loaded from the provided endpoint (refresh): " + jwksEndpoint);
+                log.debug("JWK set refreshed from the provided endpoint: " + jwksEndpoint);
                 cachedTimeJWKSet = System.currentTimeMillis();
                 cachedJwksEndpoint = jwksEndpoint;
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                log.error("Failed to refresh JWKS from the provided endpoint: " + e.getMessage());
             }
-            // Ignore any exceptions while refreshing the cache
         }
     }
 
