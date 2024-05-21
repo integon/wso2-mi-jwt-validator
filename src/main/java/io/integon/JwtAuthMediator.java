@@ -13,6 +13,7 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2Sender;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.json.JSONObject;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class JwtAuthMediator extends AbstractMediator {
 
@@ -24,12 +25,12 @@ public class JwtAuthMediator extends AbstractMediator {
     private JWTValidator validator = null;
 
     // Static counter for instances
-    private static int instanceCount = 0;
+    private static AtomicLong instanceCount = new AtomicLong();
 
     // Constructor
     public JwtAuthMediator() {
         synchronized (JwtAuthMediator.class) {
-            instanceCount++;
+            instanceCount.incrementAndGet();
             log.info("JwtAuthMediator instance created. Current instance count: " + instanceCount);
         }
     }
