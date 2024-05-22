@@ -61,6 +61,7 @@ public class JwtAuthMediator extends AbstractMediator {
         if ((jwksEndpoint == null || jwksEndpoint.isEmpty())
                 && (jwksEnvVariable == null || jwksEnvVariable.isEmpty())) {
             handleException("JWKS endpoint not found in the message", messageContext);
+            return false;
         }
         
         // If jwksEnvVariable is set, check if the environment variable contains a valid URL
@@ -78,6 +79,7 @@ public class JwtAuthMediator extends AbstractMediator {
         if (jwtToken == null || jwtToken.isEmpty()) {
             log.debug("JWT not found in the message");
             handleException("JWT not found in the message",messageContext);
+            return false;
         }
 
         // Check if the token starts with "Bearer "
