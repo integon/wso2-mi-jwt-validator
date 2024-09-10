@@ -54,22 +54,37 @@ public class JwtAuthMediator extends AbstractMediator {
             validator = new JWTValidator();
             log.debug("JWTValidator: " + validator);
             cachedTimeValidator = System.currentTimeMillis();
-        }     
+        }
 
         String jwksEndpoint = (String) messageContext.getProperty("jwksEndpoint");
         String jwksEnvVariable = (String) messageContext.getProperty("jwksEnvVariable");
+        String jwksissPairEnvVariable = (String) messageContext.getProperty("jwksSubPairEnvVariable");
+        Boolean useJwksIssPair = (Boolean) messageContext.getProperty("useJwksIssPair");
+
+        HashMap<String, String> jwksIssPair = new HashMap<String, String>();
+
         if ((jwksEndpoint == null || jwksEndpoint.isEmpty())
                 && (jwksEnvVariable == null || jwksEnvVariable.isEmpty())) {
             handleException("JWKS endpoint not found in the message", messageContext);
             return false;
         }
-        
-        // If jwksEnvVariable is set, check if the environment variable contains a valid URL
+
+        // If jwksEnvVariable is set, check if the environment variable contains a valid
+        // URL
         if (jwksEnvVariable != null && CommonUtils.containsUrl(System.getenv().get(jwksEnvVariable))) {
             jwksEndpoint = System.getenv().get(jwksEnvVariable);
             log.debug("JWKS endpoint from Env Variable " + jwksEnvVariable + ": " + jwksEndpoint);
-        } 
-                
+        }
+
+        if (jwksissPairEnvVariable != null && CommonUtils.containsUrl(System.getenv().get(jwksissPairEnvVariable))) {
+            // jwksSubPairEnvVariable is a comma separated list following this order:
+            // jwks,iss,jwks,iss..
+            String[] jwksissPair = System.getenv().get(jwksissPairEnvVariable).split(",");
+            for (int i = 0; i < jwksissPair.length; i += 2) {
+                jwksIssPair.put(jwksissPair[i], jwksissPair[i + 1]);
+            }
+        }
+
         // retrieve JWKS_TIMEOUT & JWKS_REFRESH_TIME from the message context
         String jwksTimeout = (String) messageContext.getProperty("jwksTimeout");
         String jwksRefreshTime = (String) messageContext.getProperty("jwksRefreshTime");
@@ -78,7 +93,7 @@ public class JwtAuthMediator extends AbstractMediator {
         String jwtToken = (String) messageContext.getProperty("jwtToken");
         if (jwtToken == null || jwtToken.isEmpty()) {
             log.debug("JWT not found in the message");
-            handleException("JWT not found in the message",messageContext);
+            handleException("JWT not found in the message", messageContext);
             return false;
         }
 
@@ -99,9 +114,21 @@ public class JwtAuthMediator extends AbstractMediator {
 
         // validate the JWT token
         boolean isValidJWT;
+        String jwks_used = "";
         try {
-            isValidJWT = validator.validateToken(jwtToken, jwksEndpoint);
-            log.debug("isValidJWT: " + isValidJWT);
+            if (useJwksIssPair) {
+                isValidJWT = false;
+                for (Map.Entry<String, String> entry : jwksIssPair.entrySet()) {
+                    isValidJWT = validator.validateToken(jwtToken, entry.getKey());
+                    if (isValidJWT) {
+                        jwks_used = entry.getKey();
+                        break;
+                    }
+                }
+            } else {
+                isValidJWT = validator.validateToken(jwtToken, jwksEndpoint);
+                log.debug("isValidJWT: " + isValidJWT);
+            }
         } catch (Exception e) {
             handleException(e.getMessage(), messageContext);
             return false;
@@ -154,6 +181,11 @@ public class JwtAuthMediator extends AbstractMediator {
                 break;
             }
         }
+
+        if (jwks_used != "") {
+            claims.put("iss", jwksIssPair.get(jwks_used));
+        }
+
         if (!allValuesAreNull) {
             try {
                 validator.areClaimsValid(jwtToken, claims);
@@ -174,7 +206,7 @@ public class JwtAuthMediator extends AbstractMediator {
             JSONObject jsonObject = new JSONObject(decodedToken);
 
             messageContext.setProperty("X-JWT", jsonObject.toString());
-            
+
             log.debug("Forward token set to X-JWT Header");
         }
         return true;
@@ -195,8 +227,9 @@ public class JwtAuthMediator extends AbstractMediator {
         // Get Transport Headers from the message context
         org.apache.axis2.context.MessageContext axis2MessageContext = ((Axis2MessageContext) messageContext)
                 .getAxis2MessageContext();
-        Object transportHeaders = axis2MessageContext.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
-        if(transportHeaders != null) {
+        Object transportHeaders = axis2MessageContext
+                .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
+        if (transportHeaders != null) {
             // Clear the transport headers
             Map transportHeadersMap = (Map) transportHeaders;
             transportHeadersMap.clear();
@@ -218,7 +251,7 @@ public class JwtAuthMediator extends AbstractMediator {
 
         // Respond from mediator if respond is 'true' else throw SynapseException
         String respond = (String) messageContext.getProperty("respond");
-        if (respond != null && respond.equals("true")){
+        if (respond != null && respond.equals("true")) {
             log.debug("Respond from Mediator");
             // Set the "to" property to null
             messageContext.setTo(null);
@@ -232,6 +265,6 @@ public class JwtAuthMediator extends AbstractMediator {
             // Throw a SynapseException to signal an error
             log.debug("Throw a SynapseException to trigger faultSequence");
             throw new SynapseException(message);
-        }        
+        }
     }
 }
