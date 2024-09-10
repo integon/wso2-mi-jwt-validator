@@ -58,7 +58,9 @@ public class JwtAuthMediator extends AbstractMediator {
 
         String jwksEndpoint = (String) messageContext.getProperty("jwksEndpoint");
         String jwksEnvVariable = (String) messageContext.getProperty("jwksEnvVariable");
-        String jwksissPairEnvVariable = (String) messageContext.getProperty("jwksSubPairEnvVariable");
+
+        String jwksIssPairEnvVariable = (String) messageContext.getProperty("jwksSubPairEnvVariable");
+        String jwksIssPairProperty = (String) messageContext.getProperty("jwksSubPairProperty");
         Boolean useJwksIssPair = (Boolean) messageContext.getProperty("useJwksIssPair");
 
         HashMap<String, String> jwksIssPair = new HashMap<String, String>();
@@ -76,10 +78,15 @@ public class JwtAuthMediator extends AbstractMediator {
             log.debug("JWKS endpoint from Env Variable " + jwksEnvVariable + ": " + jwksEndpoint);
         }
 
-        if (jwksissPairEnvVariable != null && CommonUtils.containsUrl(System.getenv().get(jwksissPairEnvVariable))) {
+        if (jwksIssPairEnvVariable != null && CommonUtils.containsUrl(System.getenv().get(jwksIssPairEnvVariable))) {
             // jwksSubPairEnvVariable is a comma separated list following this order:
             // jwks,iss,jwks,iss..
-            String[] jwksissPair = System.getenv().get(jwksissPairEnvVariable).split(",");
+            String[] jwksissPair = System.getenv().get(jwksIssPairEnvVariable).split(",");
+            for (int i = 0; i < jwksissPair.length; i += 2) {
+                jwksIssPair.put(jwksissPair[i], jwksissPair[i + 1]);
+            }
+        } else if (jwksIssPairProperty != null && jwksIssPairProperty != "") {
+            String[] jwksissPair = jwksIssPairProperty.split(",");
             for (int i = 0; i < jwksissPair.length; i += 2) {
                 jwksIssPair.put(jwksissPair[i], jwksissPair[i + 1]);
             }
@@ -113,26 +120,39 @@ public class JwtAuthMediator extends AbstractMediator {
         }
 
         // validate the JWT token
-        boolean isValidJWT;
+        boolean isValidJWT = false;
         String jwks_used = "";
-        try {
-            if (useJwksIssPair) {
-                isValidJWT = false;
-                for (Map.Entry<String, String> entry : jwksIssPair.entrySet()) {
+        String error = "";
+        if (useJwksIssPair) {
+            isValidJWT = false;
+            for (Map.Entry<String, String> entry : jwksIssPair.entrySet()) {
+                try {
                     isValidJWT = validator.validateToken(jwtToken, entry.getKey());
-                    if (isValidJWT) {
-                        jwks_used = entry.getKey();
-                        break;
-                    }
+                } catch (Exception e) {
+                    error = e.getMessage();
+                    continue;
                 }
-            } else {
-                isValidJWT = validator.validateToken(jwtToken, jwksEndpoint);
-                log.debug("isValidJWT: " + isValidJWT);
+                if (isValidJWT) {
+                    jwks_used = entry.getKey();
+                    break;
+                }
             }
-        } catch (Exception e) {
-            handleException(e.getMessage(), messageContext);
+        } else {
+            try {
+                isValidJWT = validator.validateToken(jwtToken, jwksEndpoint);
+            } catch (Exception e) {
+                log.debug("isValidJWT: " + isValidJWT);
+                handleException(e.getMessage(), messageContext);
+                return false;
+            }
+        }
+
+        if (!isValidJWT) {
+            log.debug("JWT validation failed: " + error);
+            handleException(error, messageContext);
             return false;
         }
+
         boolean isTokenExpired;
         try {
             isTokenExpired = validator.isTokenExpired(jwtToken);
