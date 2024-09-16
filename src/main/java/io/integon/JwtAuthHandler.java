@@ -22,6 +22,10 @@ public class JwtAuthHandler implements Handler {
     private String jwtHeader;
     private String jwksEndpoint;
     private String jwksEnvVariable;
+    private String jwksissPairProperty;
+    private String jwksissPairEnvVariable;
+    private Boolean useJwksIssPair;
+
     private String iatClaim;
     private String issClaim;
     private String subClaim;
@@ -98,28 +102,74 @@ public class JwtAuthHandler implements Handler {
             handleException("JWT token not found in the message", messageContext);
             return false;
         }
-        // If jwksEnvVariable is set, check if the environment variable contains a valid
-        // URL
-        if (jwksEnvVariable != null && System.getenv().get(jwksEnvVariable) != null
-                && CommonUtils.containsUrl(System.getenv().get(jwksEnvVariable))) {
-            jwksEndpoint = System.getenv().get(jwksEnvVariable);
-        } else {
-            // Check if the JWKS endpoint
-            if (jwksEndpoint == null || jwksEndpoint.isEmpty()) {
-                handleException("JWKS endpoint not found", messageContext);
+        HashMap<String, String> jwksIssPair = new HashMap<String, String>();
+        if (useJwksIssPair) {
+            if (jwksissPairEnvVariable != null && System.getenv().get(jwksissPairEnvVariable) != null
+                    && CommonUtils.containsUrl(System.getenv().get(jwksissPairEnvVariable))) {
+
+                String[] jwksissPair = System.getenv().get(jwksissPairEnvVariable).split(",");
+
+                for (int i = 0; i < jwksissPair.length; i += 2) {
+                    jwksIssPair.put(jwksissPair[i], jwksissPair[i + 1]);
+                }
+            } else {
+                if (jwksissPairProperty != null && !jwksissPairProperty.isEmpty()) {
+                    String[] jwksissPair = jwksissPairProperty.split(",");
+                    for (int i = 0; i < jwksissPair.length; i += 2) {
+                        jwksIssPair.put(jwksissPair[i], jwksissPair[i + 1]);
+                    }
+                }
+            }
+            if (jwksIssPair.isEmpty()) {
+                handleException("JWKS Issuer pair not found", messageContext);
                 return false;
             }
+        } else {
+            // If jwksEnvVariable is set, check if the environment variable contains a valid
+            // URL
+            if (jwksEnvVariable != null && System.getenv().get(jwksEnvVariable) != null
+                    && CommonUtils.containsUrl(System.getenv().get(jwksEnvVariable))) {
+                jwksEndpoint = System.getenv().get(jwksEnvVariable);
+            } else {
+                // Check if the JWKS endpoint
+                if (jwksEndpoint == null || jwksEndpoint.isEmpty()) {
+                    handleException("JWKS endpoint not found", messageContext);
+                    return false;
+                }
+            }
         }
+
         // Set the cache timeouts
         validator.setCacheTimeouts(jwksTimeout, jwksRefreshTime);
 
         // validate the JWT token
         boolean isValidJWT;
-        try {
-            isValidJWT = validator.validateToken(jwtToken, jwksEndpoint);
-            log.debug("isValidJWT: " + isValidJWT);
-        } catch (Exception e) {
-            handleException(e.getMessage(), messageContext);
+        String jwks_used = "";
+        String error = "";
+        if (useJwksIssPair) {
+            isValidJWT = false;
+            for (Map.Entry<String, String> entry : jwksIssPair.entrySet()) {
+                try {
+                    isValidJWT = validator.validateToken(jwtToken, entry.getKey());
+                } catch (Exception e) {
+                    error = e.getMessage();
+                    continue;
+                }
+                if (isValidJWT) {
+                    jwks_used = entry.getKey();
+                    break;
+                }
+            }
+        } else {
+            try {
+                isValidJWT = validator.validateToken(jwtToken, jwksEndpoint);
+            } catch (Exception e) {
+                handleException(e.getMessage(), messageContext);
+                return false;
+            }
+        }
+        if (!isValidJWT) {
+            handleException(error, messageContext);
             return false;
         }
         // Check if the token is expired
@@ -143,6 +193,9 @@ public class JwtAuthHandler implements Handler {
         if (issClaim != null && issClaim.isEmpty()) {
             issClaim = null;
         }
+        if (jwks_used != "") {
+            claims.put("iss", jwksIssPair.get(jwks_used));
+        }
         claims.put("iss", issClaim);
         if (subClaim != null && subClaim.isEmpty()) {
             subClaim = null;
@@ -156,6 +209,11 @@ public class JwtAuthHandler implements Handler {
             jtiClaim = null;
         }
         claims.put("jti", jtiClaim);
+
+        if (jwks_used != "") {
+            claims.put("iss", jwksIssPair.get(jwks_used));
+        }
+
         // check if all values are null
         boolean allValuesAreNull = true;
         for (String value : claims.values()) {
@@ -256,6 +314,30 @@ public class JwtAuthHandler implements Handler {
     // Interface handler injection
     public void setJwksEnvVariable(String jwksEnv) {
         jwksEnvVariable = jwksEnv;
+    }
+
+    public String getJwksissPairProperty() {
+        return jwksissPairProperty;
+    }
+
+    public void setJwksissPairProperty(String jwksissPairProperty) {
+        this.jwksissPairProperty = jwksissPairProperty;
+    }
+
+    public String getJwksissPairEnvVariable() {
+        return jwksissPairEnvVariable;
+    }
+
+    public void setJwksissPairEnvVariable(String jwksissPairEnvVariable) {
+        this.jwksissPairEnvVariable = jwksissPairEnvVariable;
+    }
+
+    public Boolean getUseJwksIssPair() {
+        return useJwksIssPair;
+    }
+
+    public void setUseJwksIssPair(String useJwksIssPair) {
+        this.useJwksIssPair = Boolean.parseBoolean(useJwksIssPair);
     }
 
     // Interface handler injection
