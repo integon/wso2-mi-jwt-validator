@@ -1,5 +1,6 @@
 package io.integon;
 
+import java.io.IOException;
 import java.net.URL;
 import java.security.interfaces.RSAPublicKey;
 import java.text.ParseException;
@@ -255,10 +256,9 @@ public class JWTValidator {
         }
 
         if (jwk == null) {
-            log.debug(kid + " not found in JWKS Endpoint: ");
+            log.debug(kid + " not found in allKeySets");
             throw new Exception("Failed to validate JWT using the provided JWKS");
         }
-        log.debug(kid + " found in JWKS Endpoint: ");
     }
 
     /**
@@ -285,16 +285,26 @@ public class JWTValidator {
         if (allKeySets.isEmpty() || cachedTimeJWKSet + ttl < System.currentTimeMillis()) {
             clearCache();
             for (URL jwksUrl : jwksUrls) {
-                JWKSet keySet = JWKSet.load(jwksUrl);
-                allKeySets.add(keySet);
-                log.debug("JWK set loaded from the provided endpoint: " + jwksUrl);
+                try {
+                    JWKSet keySet = JWKSet.load(jwksUrl);
+                    allKeySets.add(keySet);
+                    log.debug("JWK set loaded from the provided endpoint: " + jwksUrl);
+                } catch (IOException e) {
+                    log.error("Unable to load JWK set from the provided endpoint: "+ jwksUrl);
+                    throw new Exception("Failed to load JWKs: "+jwksUrl);
+                }
             }
             cachedTimeJWKSet = System.currentTimeMillis();
         } else if (cachedTimeJWKSet + refreshTimeout < System.currentTimeMillis()) {
             for (URL jwksUrl : jwksUrls) {
-                JWKSet keySet = JWKSet.load(jwksUrl);
-                allKeySets.add(keySet);
-                log.debug("JWK set refreshed from the provided endpoint: " + jwksUrl);
+                try {
+                    JWKSet keySet = JWKSet.load(jwksUrl);
+                    allKeySets.add(keySet);
+                    log.debug("JWK set loaded from the provided endpoint: " + jwksUrl);
+                } catch (IOException e) {
+                    log.error("Unable to load JWK set from the provided endpoint: "+ jwksUrl);
+                    throw new Exception("Failed to load JWKs: "+jwksUrl);
+                }
             }
             cachedTimeJWKSet = System.currentTimeMillis();
         }
