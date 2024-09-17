@@ -1,5 +1,15 @@
 package io.integon;
 
+import java.net.URL;
+import java.security.interfaces.RSAPublicKey;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.JWSVerifier;
@@ -7,21 +17,7 @@ import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
-import com.nimbusds.jose.proc.JWSKeySelector;
 import com.nimbusds.jwt.SignedJWT;
-import com.nimbusds.jose.jwk.source.RemoteJWKSet;
-import com.nimbusds.jose.util.DefaultResourceRetriever;
-import java.io.IOException;
-import java.net.URL;
-import java.security.interfaces.RSAPublicKey;
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.net.MalformedURLException;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 /**
  * This class validates the JWT token using the provided JWKS endpoint
@@ -50,9 +46,9 @@ public class JWTValidator {
      * token is validated using the public key
      * 
      * @param jwtToken
-     *                     The JWT token to validate
-     * @param jwksEndpoint
-     *                     The JWKS endpoint to use for validation
+     *                 The JWT token to validate
+     * @param jwksUrls
+     *                 The JWKS endpoint to use for validation
      * @return true if the JWT token is valid
      * @throws Exception
      */

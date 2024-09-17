@@ -3,6 +3,11 @@ package io.integon;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ArrayList;
+
+import java.net.URL;
+import java.net.MalformedURLException;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpStatus;
@@ -11,9 +16,6 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2Sender;
 import org.apache.synapse.rest.Handler;
 import org.json.JSONObject;
-import java.net.URL;
-import java.util.ArrayList;
-import java.net.MalformedURLException;
 
 /**
  * This class is used to validate the JWT token Implements the Handler interface
@@ -100,8 +102,9 @@ public class JwtAuthHandler implements Handler {
             handleException("JWT token not found in the message", messageContext);
             return false;
         }
-        
-        // If jwksEnvVariable is set, check if the environment variable contains a valid URL
+
+        // If jwksEnvVariable is set, check if the environment variable contains a valid
+        // URL
         if (jwksEnvVariable != null && System.getenv().get(jwksEnvVariable) != null
                 && CommonUtils.containsUrl(System.getenv().get(jwksEnvVariable))) {
             jwksEndpoint = System.getenv().get(jwksEnvVariable);
@@ -128,13 +131,9 @@ public class JwtAuthHandler implements Handler {
                 return false;
             }
         }
-       
 
         // Set the cache timeouts
         validator.setCacheTimeouts(jwksTimeout, jwksRefreshTime);
-
-        
-        
 
         // validate the JWT token
         boolean isValidJWT;

@@ -4,6 +4,11 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
+
+import java.net.URL;
+import java.net.MalformedURLException;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpStatus;
@@ -14,9 +19,6 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2Sender;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.json.JSONObject;
-import java.util.concurrent.atomic.AtomicLong;
-import java.net.URL;
-import java.net.MalformedURLException;
 
 public class JwtAuthMediator extends AbstractMediator {
 
