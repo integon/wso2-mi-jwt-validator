@@ -11,13 +11,16 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2Sender;
 import org.apache.synapse.rest.Handler;
 import org.json.JSONObject;
+import java.net.URL;
+import java.util.ArrayList;
+import java.net.MalformedURLException;
 
 /**
  * This class is used to validate the JWT token Implements the Handler interface
  * from the Synapse REST API to be used in a Micro Integrator API
  */
 public class JwtAuthHandler implements Handler {
-    private static final Log log = LogFactory.getLog(JwtAuthMediator.class);
+    private static final Log log = LogFactory.getLog(JwtAuthHandler.class);
 
     private String jwtHeader;
     private String jwksEndpoint;
@@ -84,7 +87,6 @@ public class JwtAuthHandler implements Handler {
             handleException("JWT token not found in the message", messageContext);
             return false;
         }
-        log.debug(jwtHeader + ": has the following value: " + authHeader);
         // Check if the token starts with "Bearer "
         if (!authHeader.trim().startsWith("Bearer")) {
             log.debug("Invalid JWT token format: " + authHeader);
@@ -98,8 +100,8 @@ public class JwtAuthHandler implements Handler {
             handleException("JWT token not found in the message", messageContext);
             return false;
         }
-        // If jwksEnvVariable is set, check if the environment variable contains a valid
-        // URL
+        
+        // If jwksEnvVariable is set, check if the environment variable contains a valid URL
         if (jwksEnvVariable != null && System.getenv().get(jwksEnvVariable) != null
                 && CommonUtils.containsUrl(System.getenv().get(jwksEnvVariable))) {
             jwksEndpoint = System.getenv().get(jwksEnvVariable);
@@ -110,13 +112,34 @@ public class JwtAuthHandler implements Handler {
                 return false;
             }
         }
+
+        ArrayList<URL> jwksUrls = new ArrayList<>();
+        String[] jwksUrlsSplit = jwksEndpoint.split(",");
+        for (String jkwsUrlString : jwksUrlsSplit) {
+            try {
+                // Trim any spaces and attempt to create a URL
+                URL url = new URL(jkwsUrlString.trim());
+                // If successful, add the valid URL to the list
+                jwksUrls.add(url);
+                log.debug("Added valid URL: " + url);
+            } catch (MalformedURLException e) {
+                log.error("JWKS URL invalid: " + jkwsUrlString.trim());
+                handleException("JWKS URL invalid: " + jkwsUrlString.trim(), messageContext);
+                return false;
+            }
+        }
+       
+
         // Set the cache timeouts
         validator.setCacheTimeouts(jwksTimeout, jwksRefreshTime);
+
+        
+        
 
         // validate the JWT token
         boolean isValidJWT;
         try {
-            isValidJWT = validator.validateToken(jwtToken, jwksEndpoint);
+            isValidJWT = validator.validateToken(jwtToken, jwksUrls);
             log.debug("isValidJWT: " + isValidJWT);
         } catch (Exception e) {
             handleException(e.getMessage(), messageContext);
