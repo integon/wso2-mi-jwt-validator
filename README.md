@@ -37,7 +37,7 @@ Both .jar files are available on the Maven Central Repository. You can find the 
 | --------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | jwtHeader       | The name of the header that contains the JWT Token.          | ```<property name="jwtHeader" value="Authorization"/>```     |
 | iatClaim        | The value in seconds will be used to test if the jwt token is not older than the provided value. | ```<property name="iatClaim" value="1800"/>```<br>```<property name="iatClaim" value=""/>``` |
-| issClaim        | The value of the iss claim that is expected to be present in the JWT Token. | ```<property name="issClaim" value="issuer"/>```<br>```<property name="issClaim" value=""/>``` |
+| issClaim        | The regex value of the iss claim. Multiple iss can be specified with a regex like this `^(myiss1|myiss2|myiss3)$`| ```<property name="issClaim" value="issuer"/>```<br>```<property name="issClaim" value=""/>``` |
 | subClaim        | The value of the sub claim that is expected to be present in the JWT Token. | ```<property name="subClaim" value="subject"/>```<br>```<property name="subClaim" value=""/>``` |
 | audClaim        | The value of the aud claim that is expected to be present in the JWT Token. | ```<property name="audClaim" value="audience"/>```<br>```<property name="audClaim" value=""/>``` |
 | jtiClaim        | If the jti claim set to "enabled", the jti claim will be checked against a cache and will be denied if the same Token has already been used. | ```<property name="jtiClaim" value="enabled"/>```            |
@@ -64,7 +64,7 @@ The following Parameters can be left empty:
 | --------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
 | jwtToken        | The jwt token that is to be validated.                       | ```<property name="jwtToken" expression="$trp:Authorization"/>```<br>```<property name="jwtToken" expression="$ctx:jwt"/>``` |
 | iatClaim        | The value in seconds will be used to test if the jwt token is not older than the provided value. | ```<property name="iatClaim" value="1800"/>```<br>```<property name="iatClaim" value=""/>``` |
-| issClaim        | The value of the iss claim that is expected to be present in the JWT Token. | ```<property name="issClaim" value="issuer"/>```<br>```<property name="issClaim" value=""/>``` |
+| issClaim        | The regex value of the iss claim. Multiple iss can be specified with a regex like this `^(myiss1|myiss2|myiss3)$` | ```<property name="issClaim" value="issuer"/>```<br>```<property name="issClaim" value=""/>``` |
 | subClaim        | The value of the sub claim that is expected to be present in the JWT Token. | ```<property name="subClaim" value="subject"/>```<br>```<property name="subClaim" value=""/>``` |
 | audClaim        | The value of the aud claim that is expected to be present in the JWT Token. | ```<property name="audClaim" value="audience"/>```<br>```<property name="audClaim" value=""/>``` |
 | jtiClaim        | If the jti claim set to "enabled", the jti claim will be checked against a cache and will be denied if the same Token has already been used. | ```<property name="jtiClaim" value="enabled"/>```            |

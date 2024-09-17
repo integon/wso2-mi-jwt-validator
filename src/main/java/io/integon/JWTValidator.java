@@ -146,7 +146,7 @@ public class JWTValidator {
         }
 
         if (claims.get("iss") != null) {
-            if (!signedJWT.getJWTClaimsSet().getIssuer().equals(claims.get("iss").toString())) {
+            if (!signedJWT.getJWTClaimsSet().getIssuer().matches(claims.get("iss").toString())) {
                 log.debug("JWT token issuer claim does not match the expected value: " + claims.get("iss").toString());
                 throw new Exception("JWT token issuer claim does not match the expected value");
             }
@@ -290,8 +290,8 @@ public class JWTValidator {
                     allKeySets.add(keySet);
                     log.debug("JWK set loaded from the provided endpoint: " + jwksUrl);
                 } catch (IOException e) {
-                    log.error("Unable to load JWK set from the provided endpoint: "+ jwksUrl);
-                    throw new Exception("Failed to load JWKs: "+jwksUrl);
+                    log.error("Unable to load JWK set from the provided endpoint: " + jwksUrl);
+                    throw new Exception("Failed to load JWKs: " + jwksUrl);
                 }
             }
             cachedTimeJWKSet = System.currentTimeMillis();
@@ -302,8 +302,8 @@ public class JWTValidator {
                     allKeySets.add(keySet);
                     log.debug("JWK set loaded from the provided endpoint: " + jwksUrl);
                 } catch (IOException e) {
-                    log.error("Unable to load JWK set from the provided endpoint: "+ jwksUrl);
-                    throw new Exception("Failed to load JWKs: "+jwksUrl);
+                    log.error("Unable to load JWK set from the provided endpoint: " + jwksUrl);
+                    throw new Exception("Failed to load JWKs: " + jwksUrl);
                 }
             }
             cachedTimeJWKSet = System.currentTimeMillis();
