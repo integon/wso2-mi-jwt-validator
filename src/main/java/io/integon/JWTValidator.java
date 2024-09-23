@@ -1,5 +1,16 @@
 package io.integon;
 
+import java.io.IOException;
+import java.net.URL;
+import java.security.interfaces.RSAPublicKey;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.JWSVerifier;
@@ -8,14 +19,6 @@ import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jwt.SignedJWT;
-import java.io.IOException;
-import java.net.URL;
-import java.security.interfaces.RSAPublicKey;
-import java.text.ParseException;
-import java.util.Date;
-import java.util.HashMap;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 /**
  * This class validates the JWT token using the provided JWKS endpoint
@@ -23,7 +26,8 @@ import org.apache.commons.logging.LogFactory;
 public class JWTValidator {
     private static final Log log = LogFactory.getLog(JWTValidator.class);
 
-    private JWKSet jwkSet = null;
+    private ArrayList<JWKSet> allKeySets = new ArrayList<>();
+
     private String cachedJwksEndpoint = null;
     private long cachedTimeJWKSet = 0;
     private JWK jwk = null;
@@ -43,13 +47,13 @@ public class JWTValidator {
      * token is validated using the public key
      * 
      * @param jwtToken
-     *                     The JWT token to validate
-     * @param jwksEndpoint
-     *                     The JWKS endpoint to use for validation
+     *                 The JWT token to validate
+     * @param jwksUrls
+     *                 The JWKS endpoint to use for validation
      * @return true if the JWT token is valid
      * @throws Exception
      */
-    public boolean validateToken(String jwtToken, String jwksEndpoint) throws Exception {
+    public boolean validateToken(String jwtToken, ArrayList<URL> jwksUrls) throws Exception {
         SignedJWT signedJWT;
         // Parse the JWT token
         try {
@@ -59,8 +63,7 @@ public class JWTValidator {
             log.error("Failed to parse JWT token: " + e.getMessage());
             throw new Exception("Invalid JWT token");
         }
-
-        loadAndCacheJWKSet(jwksEndpoint);
+        loadAndCacheJWKSet(jwksUrls);
         getAndVerifyJWKByKid(signedJWT);
         convertJWKToPublicKey(jwk);
 
@@ -143,7 +146,7 @@ public class JWTValidator {
         }
 
         if (claims.get("iss") != null) {
-            if (!signedJWT.getJWTClaimsSet().getIssuer().equals(claims.get("iss").toString())) {
+            if (!signedJWT.getJWTClaimsSet().getIssuer().matches(claims.get("iss").toString())) {
                 log.debug("JWT token issuer claim does not match the expected value: " + claims.get("iss").toString());
                 throw new Exception("JWT token issuer claim does not match the expected value");
             }
@@ -196,9 +199,8 @@ public class JWTValidator {
      * cache with updated values.
      */
     private void clearCache() {
-        jwkSet = null;
+        allKeySets.clear();
         jwk = null;
-        cachedJwksEndpoint = null;
         publicKey = null;
         cachedTimeJWKSet = 0;
         log.debug("Cleared the cached values");
@@ -246,13 +248,17 @@ public class JWTValidator {
             log.debug("Invalid JWT token: JWT header or key id is null");
             throw new Exception("Invalid JWT token");
         }
-        // Get the JWK with the matching "kid"
-        jwk = jwkSet.getKeyByKeyId(kid);
+        for (JWKSet keySet : allKeySets) {
+            jwk = keySet.getKeyByKeyId(kid);
+            if (jwk != null) {
+                break; // Stop once a matching key is found
+            }
+        }
+
         if (jwk == null) {
-            log.debug(kid + " not found in JWKS Endpoint: " + cachedJwksEndpoint);
+            log.debug(kid + " not found in allKeySets");
             throw new Exception("Failed to validate JWT using the provided JWKS");
         }
-        log.debug(kid + " found in JWKS Endpoint: " + cachedJwksEndpoint);
     }
 
     /**
@@ -275,29 +281,32 @@ public class JWTValidator {
      * @throws Exception
      *                   If there is a parse exception while loading the JwkSet.
      */
-    private synchronized void loadAndCacheJWKSet(String jwksEndpoint) throws Exception {
-        if (jwkSet == null || cachedTimeJWKSet + ttl < System.currentTimeMillis()
-                || !cachedJwksEndpoint.equals(jwksEndpoint)) {
-            try {
-                clearCache();
-                jwkSet = JWKSet.load(new URL(jwksEndpoint));
-                log.debug("JWK set loaded from the provided endpoint: " + jwksEndpoint);
-                cachedTimeJWKSet = System.currentTimeMillis();
-                cachedJwksEndpoint = jwksEndpoint;
-            } catch (ParseException | IOException e) {
-                log.error("Failed to load JWKS from the provided endpoint: " + jwksEndpoint + " because "
-                        + e.getMessage());
-                throw new Exception("Failed to load JWKS from the provided endpoint");
+    private synchronized void loadAndCacheJWKSet(ArrayList<URL> jwksUrls) throws Exception {
+        if (allKeySets.isEmpty() || cachedTimeJWKSet + ttl < System.currentTimeMillis()) {
+            clearCache();
+            for (URL jwksUrl : jwksUrls) {
+                try {
+                    JWKSet keySet = JWKSet.load(jwksUrl);
+                    allKeySets.add(keySet);
+                    log.debug("JWK set loaded from the provided endpoint: " + jwksUrl);
+                } catch (IOException e) {
+                    log.error("Unable to load JWK set from the provided endpoint: " + jwksUrl);
+                    throw new Exception("Failed to load JWKs: " + jwksUrl);
+                }
             }
+            cachedTimeJWKSet = System.currentTimeMillis();
         } else if (cachedTimeJWKSet + refreshTimeout < System.currentTimeMillis()) {
-            try {
-                jwkSet = JWKSet.load(new URL(jwksEndpoint));
-                log.debug("JWK set refreshed from the provided endpoint: " + jwksEndpoint);
-                cachedTimeJWKSet = System.currentTimeMillis();
-                cachedJwksEndpoint = jwksEndpoint;
-            } catch (Exception e) {
-                log.error("Failed to refresh JWKS from the provided endpoint: " + e.getMessage());
+            for (URL jwksUrl : jwksUrls) {
+                try {
+                    JWKSet keySet = JWKSet.load(jwksUrl);
+                    allKeySets.add(keySet);
+                    log.debug("JWK set loaded from the provided endpoint: " + jwksUrl);
+                } catch (IOException e) {
+                    log.error("Unable to load JWK set from the provided endpoint: " + jwksUrl);
+                    throw new Exception("Failed to load JWKs: " + jwksUrl);
+                }
             }
+            cachedTimeJWKSet = System.currentTimeMillis();
         }
     }
 
