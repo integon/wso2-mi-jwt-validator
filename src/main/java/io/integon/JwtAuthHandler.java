@@ -29,14 +29,21 @@ public class JwtAuthHandler implements Handler {
     private String jwksEnvVariable;
     private String iatClaim;
     private String issClaim;
+    private String issEnvVariable;
     private String subClaim;
     private String audClaim;
+    private String audEnvVariable;
     private String jtiClaim;
     private String jwksTimeout;
     private String jwksRefreshTime;
 
+    private String claimName;
+
+    private String claimValueEnvVariable;
+    private String claimValue;
+
     private long cachedTimeValidator = 0;
-    private long cachedTimeValidatorReset = 86400000; // 24 hours
+    protected final long CACHED_TIME_VALIDATOR_RESET = 86400000; // 24 hours
 
     private JWTValidator validator = null;
 
@@ -65,7 +72,7 @@ public class JwtAuthHandler implements Handler {
     @Override
     public boolean handleRequest(MessageContext messageContext) {
         // initialize the JWTValidator
-        if (validator == null || cachedTimeValidator + cachedTimeValidatorReset < System.currentTimeMillis()) {
+        if (validator == null || cachedTimeValidator + CACHED_TIME_VALIDATOR_RESET < System.currentTimeMillis()) {
             validator = new JWTValidator();
             cachedTimeValidator = System.currentTimeMillis();
             log.debug("JWTValidator initialized: " + validator);
@@ -78,7 +85,7 @@ public class JwtAuthHandler implements Handler {
 
         // retrieve the JWT token from transport headers
         String authHeader = null;
-        if (headers != null && headers instanceof Map) {
+        if (headers instanceof Map) {
             Map headersMap = (Map) headers;
             authHeader = (String) headersMap.get(jwtHeader);
         }
@@ -96,8 +103,8 @@ public class JwtAuthHandler implements Handler {
             return false;
         }
         // Remove "Bearer " from the token
-        String jwtToken = authHeader.substring(7);
-        if (jwtToken == null || jwtToken.isEmpty()) {
+        String jwtToken = authHeader.substring(7).trim();
+        if (jwtToken.isEmpty()) {
             log.debug("JWT token not found in the message");
             handleException("JWT token not found in the message", messageContext);
             return false;
@@ -105,18 +112,14 @@ public class JwtAuthHandler implements Handler {
 
         // If jwksEnvVariable is set, check if the environment variable contains a valid
         // URL
-        if (jwksEnvVariable != null && System.getenv().get(jwksEnvVariable) != null
-                && CommonUtils.containsUrl(System.getenv().get(jwksEnvVariable))) {
-            jwksEndpoint = System.getenv().get(jwksEnvVariable);
-        } else {
-            // Check if the JWKS endpoint
-            if (jwksEndpoint == null || jwksEndpoint.isEmpty()) {
-                handleException("JWKS endpoint not found", messageContext);
-                return false;
-            }
+        jwksEndpoint = CommonUtils.getDefaultValueOrValueFromEnv("jwksEndpoint", jwksEndpoint, jwksEnvVariable);
+        if (jwksEndpoint == null || jwksEndpoint.isEmpty()) {
+            handleException("JWKS endpoint not found in the message", messageContext);
+            return false;
         }
 
         ArrayList<URL> jwksUrls = new ArrayList<>();
+
         String[] jwksUrlsSplit = jwksEndpoint.split(",");
         for (String jkwsUrlString : jwksUrlsSplit) {
             try {
@@ -131,7 +134,6 @@ public class JwtAuthHandler implements Handler {
                 return false;
             }
         }
-
         // Set the cache timeouts
         validator.setCacheTimeouts(jwksTimeout, jwksRefreshTime);
 
@@ -158,26 +160,13 @@ public class JwtAuthHandler implements Handler {
         }
         // Check if the claims are valid
         HashMap<String, String> claims = new HashMap<String, String>();
-        if (iatClaim != null && iatClaim.isEmpty()) {
-            iatClaim = null;
-        }
-        claims.put("iat", iatClaim);
-        if (issClaim != null && issClaim.isEmpty()) {
-            issClaim = null;
-        }
-        claims.put("iss", issClaim);
-        if (subClaim != null && subClaim.isEmpty()) {
-            subClaim = null;
-        }
-        claims.put("sub", subClaim);
-        if (audClaim != null && audClaim.isEmpty()) {
-            audClaim = null;
-        }
-        claims.put("aud", audClaim);
-        if (jtiClaim != null && jtiClaim.isEmpty()) {
-            jtiClaim = null;
-        }
-        claims.put("jti", jtiClaim);
+        claims.put("iat", CommonUtils.getDefaultValueOrValueFromEnv("iat", iatClaim, null));
+        claims.put("iss", CommonUtils.getDefaultValueOrValueFromEnv("iss", issClaim, issEnvVariable));
+        claims.put("sub", CommonUtils.getDefaultValueOrValueFromEnv("sub", subClaim, null));
+        claims.put("aud", CommonUtils.getDefaultValueOrValueFromEnv("aud", audClaim, audEnvVariable));
+        claims.put("jti", CommonUtils.getDefaultValueOrValueFromEnv("jti", jtiClaim, null));
+        claims.put("genericClaimName", CommonUtils.getDefaultValueOrValueFromEnv("genericClaimName", claimName, null));
+        claims.put("genericClaimValue", CommonUtils.getDefaultValueOrValueFromEnv("genericClaimValue", claimValue, claimValueEnvVariable));
         // check if all values are null
         boolean allValuesAreNull = true;
         for (String value : claims.values()) {
@@ -311,6 +300,15 @@ public class JwtAuthHandler implements Handler {
     }
 
     // Interface handler injection
+    public String getAudEnvVariable() {
+        return audEnvVariable;
+    }
+
+    // Interface handler injection
+    public void setAudEnvVariable(String audEnvVariable) {
+        this.audEnvVariable = audEnvVariable;
+    }
+    // Interface handler injection
     public String getAudClaim() {
         return audClaim;
     }
@@ -362,5 +360,41 @@ public class JwtAuthHandler implements Handler {
 
     public void setForwardToken(String forwardToken) {
         this.forwardToken = forwardToken;
+    }
+
+    // Interface handler injection
+    public String getClaimName() {
+        return claimName;
+    }
+
+    // Interface handler injection
+    public void setClaimName(String claimName) {
+        this.claimName = claimName;
+    }
+
+    // Interface handler injection
+    public String getClaimValue() {
+        return claimValue;
+    }
+
+    // Interface handler injection
+    public void setClaimValue(String claimValue) {
+        this.claimValue = claimValue;
+    }
+
+    public String getIssEnvVariable() {
+        return issEnvVariable;
+    }
+
+    public void setIssEnvVariable(String issEnvVariable) {
+        this.issEnvVariable = issEnvVariable;
+    }
+
+    public String getClaimValueEnvVariable() {
+        return claimValueEnvVariable;
+    }
+
+    public void setClaimValueEnvVariable(String claimValueEnvVariable) {
+        this.claimValueEnvVariable = claimValueEnvVariable;
     }
 }

@@ -32,3 +32,4 @@ jar/
 .vscode/
 
 *.back*
+/.idea/

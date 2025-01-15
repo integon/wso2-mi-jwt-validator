@@ -13,7 +13,7 @@ Add the following dependencies to your pom.xml file:
 <dependency>
   <groupId>io.integon.wso2mi.jwt</groupId>
   <artifactId>wso2-mi-jwt-validator</artifactId>
-  <version>1.3.0</version>
+  <version>1.4.0</version>
 </dependency>
 <dependency>
     <groupId>com.nimbusds</groupId>
@@ -33,19 +33,24 @@ Both .jar files are available on the Maven Central Repository. You can find the 
 
 ## Usage
 ### Available Properties (Custom Handler)
-| Parameter Name  | Description                                                  | How to refrence                                              |
-| --------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| jwtHeader       | The name of the header that contains the JWT Token.          | ```<property name="jwtHeader" value="Authorization"/>```     |
-| iatClaim        | The value in seconds will be used to test if the jwt token is not older than the provided value. | ```<property name="iatClaim" value="1800"/>```<br>```<property name="iatClaim" value=""/>``` |
-| issClaim        | The regex value of the iss claim. Multiple iss can be specified with a regex like this `^(myiss1|myiss2|myiss3)$`| ```<property name="issClaim" value="issuer"/>```<br>```<property name="issClaim" value=""/>``` |
-| subClaim        | The value of the sub claim that is expected to be present in the JWT Token. | ```<property name="subClaim" value="subject"/>```<br>```<property name="subClaim" value=""/>``` |
-| audClaim        | The value of the aud claim that is expected to be present in the JWT Token. | ```<property name="audClaim" value="audience"/>```<br>```<property name="audClaim" value=""/>``` |
-| jtiClaim        | If the jti claim set to "enabled", the jti claim will be checked against a cache and will be denied if the same Token has already been used. | ```<property name="jtiClaim" value="enabled"/>```            |
-| jwksEndpoint    | The URL of the JWKS Endpoint. Multiple Endpoints are possible with a "," separated list. | ```<property name="jwksEndpoint" value="https://apim.ch/oauth2/jwks"/>``` |
-| jwksEnvVariable | The name of the environment variable that contains the URL of the JWKS Endpoint. Multiple Endpoints in environment variable are possible with a "," separated list. | ```<property name="jwksEnvVariable" value="jwksEndpoint"/>``` |
-| jwksTimeout     | The timeout in seconds for the JWKS Endpoint Caching.        | ```<property name="jwksTimeout" value="30"/>```<br>```<property name="jwksTimeout" value=""/>``` |
-| jwksRefreshTime | The time in seconds after which the JWKS Endpoint is refreshed. | ```<property name="jwksRefreshTime" value="15"/>```<br>```<property name="jwksRefreshTime" value=""/>``` |
-| forwardToken    | If set to 'true' the decoded JWT will be set to the message context property 'X-JWT' in json. | ```<property name="forwardToken" value="true"/>```           |
+| Parameter Name        | Description                                                                                                                                                         | How to refrence                                                                                                        |
+|-----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
+| jwtHeader             | The name of the header that contains the JWT Token.                                                                                                                 | ```<property name="jwtHeader" value="Authorization"/>```                                                               |
+| iatClaim              | The value in seconds will be used to test if the jwt token is not older than the provided value.                                                                    | ```<property name="iatClaim" value="1800"/>```<br>```<property name="iatClaim" value=""/>```                           |
+| issClaim              | The regex value of the iss claim. Multiple iss can be specified with a regex like this `^(myiss1\|myiss2\|myiss3)$`                                                 | ```<property name="issClaim" value="issuer"/>```<br>```<property name="issClaim" value=""/>```                         |
+| issEnvVariable        | The name of the environment variable that contains the issClaim                                                                                                     | ```<property name="issEnvVariable" value="ISS_CLAIM_VARIABLE"/>```<br>```<property name="issEnvVariable" value=""/>``` |
+| subClaim              | The value of the sub claim that is expected to be present in the JWT Token.                                                                                         | ```<property name="subClaim" value="subject"/>```<br>```<property name="subClaim" value=""/>```                        |
+| audClaim              | The value of the aud claim that is expected to be present in the JWT Token. This is a regex                                                                         | ```<property name="audClaim" value="audience"/>```<br>```<property name="audClaim" value=""/>```                       |
+| audEnvVariable        | The name of the environment variable that contains the audClaim                                                                                                     | ```<property name="audEnvVariable" value="AUD_CLAIM_VARIABLE"/>```<br>```<property name="audEnvVariable" value=""/>``` |
+| jtiClaim              | If the jti claim set to "enabled", the jti claim will be checked against a cache and will be denied if the same Token has already been used.                        | ```<property name="jtiClaim" value="enabled"/>```                                                                      |
+| jwksEndpoint          | The URL of the JWKS Endpoint. Multiple Endpoints are possible with a "," separated list.                                                                            | ```<property name="jwksEndpoint" value="https://apim.ch/oauth2/jwks"/>```                                              |
+| jwksEnvVariable       | The name of the environment variable that contains the URL of the JWKS Endpoint. Multiple Endpoints in environment variable are possible with a "," separated list. | ```<property name="jwksEnvVariable" value="jwksEndpoint"/>```                                                          |
+| jwksTimeout           | The timeout in seconds for the JWKS Endpoint Caching.                                                                                                               | ```<property name="jwksTimeout" value="30"/>```<br>```<property name="jwksTimeout" value=""/>```                       |
+| jwksRefreshTime       | The time in seconds after which the JWKS Endpoint is refreshed.                                                                                                     | ```<property name="jwksRefreshTime" value="15"/>```<br>```<property name="jwksRefreshTime" value=""/>```               |
+| forwardToken          | If set to 'true' the decoded JWT will be set to the message context property 'X-JWT' in json.                                                                       | ```<property name="forwardToken" value="true"/>```                                                                     |
+| claimName             | The name of a generic claim that is expected to be present in the JWT Token.                                                                                        | ```<property name="claimName" value="env"/>```                                                                         |
+| claimValue            | The value that is expected to be present for the claimName (see above)                                                                                              | ```<property name="claimValue" value="TEST"/>```                                                                       |
+| claimValueEnvVariable | The environment variable that contains the value that is expected to be present for the claimName (see above)                                                       | ```<property name="claimValueEnvVariable" value="ENVIRONMENT_VARIABLE"/>```                                            |
 
 
 The following Parameters can be left empty:
@@ -58,35 +63,16 @@ The following Parameters can be left empty:
 - jtiClaim (Claim will not be checked)
 - jwksTimeout (default will be set: 6000)
 - jwksRefreshTime (default will be set: 3000)
+- claimName (no special claim will be checked)
 
 ### Available Properties (Custom Mediator)
-| Parameter Name  | Description                                                  | How to refrence                                              |
-| --------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| jwtToken        | The jwt token that is to be validated.                       | ```<property name="jwtToken" expression="$trp:Authorization"/>```<br>```<property name="jwtToken" expression="$ctx:jwt"/>``` |
-| iatClaim        | The value in seconds will be used to test if the jwt token is not older than the provided value. | ```<property name="iatClaim" value="1800"/>```<br>```<property name="iatClaim" value=""/>``` |
-| issClaim        | The regex value of the iss claim. Multiple iss can be specified with a regex like this `^(myiss1|myiss2|myiss3)$` | ```<property name="issClaim" value="issuer"/>```<br>```<property name="issClaim" value=""/>``` |
-| subClaim        | The value of the sub claim that is expected to be present in the JWT Token. | ```<property name="subClaim" value="subject"/>```<br>```<property name="subClaim" value=""/>``` |
-| audClaim        | The value of the aud claim that is expected to be present in the JWT Token. | ```<property name="audClaim" value="audience"/>```<br>```<property name="audClaim" value=""/>``` |
-| jtiClaim        | If the jti claim set to "enabled", the jti claim will be checked against a cache and will be denied if the same Token has already been used. | ```<property name="jtiClaim" value="enabled"/>```            |
-| jwksEndpoint    | The URL of the JWKS Endpoint. Multiple Endpoints are possible with a "," separated list. | ```<property name="jwksEndpoint" value="https://apim.ch/oauth2/jwks"/>``` |
-| jwksEnvVariable | The name of the environment variable that contains the URL of the JWKS Endpoint. Multiple Endpoints in environment variable are possible with a "," separated list. | ```<property name="jwksEnvVariable" value="jwksEndpoint"/>``` |
-| jwksTimeout     | The timeout in seconds for the JWKS Endpoint Caching.        | ```<property name="jwksTimeout" value="30"/>```<br>```<property name="jwksTimeout" value=""/>``` |
-| jwksRefreshTime | The time in seconds after which the JWKS Endpoint is refreshed. | ```<property name="jwksRefreshTime" value="15"/>```<br/>```<property name="jwksRefreshTime" value=""/>``` |
-| forwardToken    | If set to 'true' the decoded JWT will be set to the message context property 'X-JWT' in json. | ```<property name="forwardToken" value="true"/>```           |
-| respond         | If set to 'true' the mediator will respond without triggering the faultSequence. | ```<property name="respond" value="true"/>```                |
+The properties and their handling is more or less the same for the Custom Mediator and the Custom Handler.
+ATTENTION: the jwtHeader property cannot be used in the Custom Mediator, use jwtToken:
 
-The following Parameters can be left empty:
-- jwksEndpoint (IF jwksEnvVariable is set)
-- jwksEnvVariable (IF jwksEndpoint is set)
-- iatClaim (Claim will not be checked)
-- issClaim (Claim will not be checked)
-- subClaim (Claim will not be checked)
-- audClaim (Claim will not be checked)
-- jtiClaim (Claim will not be checked)
-- jwksTimeout (default will be set: 6000)
-- jwksRefreshTime (default will be set: 3000)
-- forwardToken (default: false)
-- respond (default: false)
+| Parameter Name | Description              | How to refrence                                                                                                              |
+|----------------|--------------------------|------------------------------------------------------------------------------------------------------------------------------|
+| jwtToken       | The JWT token to be used | ```<property name="jwtToken" value="eyJ0eXAiOiJKV"/>```<br>```<property name="jwtToken" expression="$trp:Authorization"/>``` |
+
 
 ### Examples
 #### Engage JWT Handler for MI APIs

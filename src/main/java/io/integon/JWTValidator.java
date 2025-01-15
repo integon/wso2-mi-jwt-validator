@@ -189,6 +189,18 @@ public class JWTValidator {
             }
             log.debug("JWT token JTI claim is valid");
         }
+        if (claims.get("genericClaimName") != null) {
+            String claimName = claims.get("genericClaimName");
+            String claimValue = claims.get("genericClaimValue");
+            if (claimValue != null) {
+                if (!signedJWT.getJWTClaimsSet().getClaim(claimName).toString().matches(claimValue)) {
+                    log.debug(
+                            "JWT token " + claimName + " claim does not match the expected value: " + claimValue);
+                    throw new Exception("JWT token " + claimName + " claim does not match the expected value");
+                }
+                log.debug("JWT token " + claimName + " claim matches the expected value");
+            }
+        }
         log.debug("JWT token claims are valid");
         return true;
     }

@@ -14,6 +14,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpStatus;
 import org.apache.synapse.MessageContext;
+
 /**
  * This class contains common methods used by the other classes
  */
@@ -51,10 +52,10 @@ public class CommonUtils {
         OMElement payload = soapFactory.createOMElement("jsonObject", null);
         OMElement codeElement = soapFactory.createOMElement(new QName("status"));
         codeElement.setText(String.valueOf(HttpStatus.SC_UNAUTHORIZED));
-        OMElement messagElement = soapFactory.createOMElement(new QName("message"));
-        messagElement.setText(String.valueOf(message));
+        OMElement messageElement = soapFactory.createOMElement(new QName("message"));
+        messageElement.setText(String.valueOf(message));
         payload.addChild(codeElement);
-        payload.addChild(messagElement);
+        payload.addChild(messageElement);
 
         // Create a SOAPEnvelope and add the XML payload to its body
         SOAPEnvelope envelope = soapFactory.getDefaultEnvelope();
@@ -70,4 +71,25 @@ public class CommonUtils {
         return messageContext;
     }
 
+    public static String getValueFromParameterOrEnv(MessageContext messageContext, String parameterName, String envParameterName) {
+        String claim = (String) messageContext.getProperty(parameterName);
+        String claimVariableName = (String) messageContext.getProperty(envParameterName);
+        claim = getDefaultValueOrValueFromEnv(parameterName, claim, claimVariableName);
+        if (claim != null && claim.isEmpty()) {
+            claim = null;
+        }
+        return claim;
+    }
+
+    public static String getDefaultValueOrValueFromEnv(String claimName, String defaultValue, String claimVariableName) {
+        String claim = defaultValue;
+        if (claimVariableName != null && !claimVariableName.isEmpty()) {
+            claim = System.getenv().get(claimVariableName);
+            log.debug(claimName + " from Env Variable " + claimVariableName + ": " + claim);
+        }
+        if (claim != null && claim.isEmpty()) {
+            claim = null;
+        }
+        return claim;
+    }
 }
