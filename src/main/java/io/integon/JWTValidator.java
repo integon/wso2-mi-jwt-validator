@@ -82,7 +82,7 @@ public class JWTValidator {
      * Checks if the JWT token is expired This method only gets called if the JWT
      * token is valid
      * 
-     * @param jwtToken
+     * @param parsedJWT
      *                 The JWT token to check
      * @return true if the JWT token is expired
      * @throws Exception
