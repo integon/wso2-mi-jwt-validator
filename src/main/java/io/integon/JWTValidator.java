@@ -28,7 +28,6 @@ public class JWTValidator {
 
     private ArrayList<JWKSet> allKeySets = new ArrayList<>();
 
-    private String cachedJwksEndpoint = null;
     private long cachedTimeJWKSet = 0;
     private JWK jwk = null;
     private long ttl = 60 * 60 * 1000; // 1 hour
@@ -53,7 +52,7 @@ public class JWTValidator {
      * @return true if the JWT token is valid
      * @throws Exception
      */
-    public boolean validateToken(String jwtToken, ArrayList<URL> jwksUrls) throws Exception {
+    public SignedJWT validateToken(String jwtToken, ArrayList<URL> jwksUrls) throws Exception {
         SignedJWT signedJWT;
         // Parse the JWT token
         try {
@@ -76,7 +75,7 @@ public class JWTValidator {
             throw new Exception("Failed to validate JWT using the provided JWKS");
         }
         log.debug("JWT token validated successfully");
-        return true;
+        return signedJWT;
     }
 
     /**
@@ -88,16 +87,7 @@ public class JWTValidator {
      * @return true if the JWT token is expired
      * @throws Exception
      */
-    public boolean isTokenExpired(String jwtToken) throws Exception {
-        SignedJWT signedJWT;
-        // Parse the JWT token
-        try {
-            signedJWT = SignedJWT.parse(jwtToken);
-        } catch (ParseException e) {
-            log.error("Failed to parse JWT token: " + e.getMessage());
-            throw new Exception("Invalid JWT token");
-        }
-
+    public boolean isTokenExpired(SignedJWT signedJWT) throws Exception {
         // Check if token is expired
         if (signedJWT.getJWTClaimsSet().getExpirationTime().before(new java.util.Date())) {
             log.debug("JWT token is expired");

@@ -17,6 +17,8 @@ import org.apache.synapse.core.axis2.Axis2Sender;
 import org.apache.synapse.rest.Handler;
 import org.json.JSONObject;
 
+import com.nimbusds.jwt.SignedJWT;
+
 /**
  * This class is used to validate the JWT token Implements the Handler interface
  * from the Synapse REST API to be used in a Micro Integrator API
@@ -136,10 +138,10 @@ public class JwtAuthHandler implements Handler {
         validator.setCacheTimeouts(jwksTimeout, jwksRefreshTime);
 
         // validate the JWT token
-        boolean isValidJWT;
+        SignedJWT signedJWT;
         try {
-            isValidJWT = validator.validateToken(jwtToken, jwksUrls);
-            log.debug("isValidJWT: " + isValidJWT);
+            signedJWT = validator.validateToken(jwtToken, jwksUrls);
+            log.debug("JWT is valid");
         } catch (Exception e) {
             handleException(e.getMessage(), messageContext);
             return false;
@@ -147,7 +149,7 @@ public class JwtAuthHandler implements Handler {
         // Check if the token is expired
         boolean isTokenExpired;
         try {
-            isTokenExpired = validator.isTokenExpired(jwtToken);
+            isTokenExpired = validator.isTokenExpired(signedJWT);
             if (isTokenExpired) {
                 handleException("JWT token is expired", messageContext);
                 return false;

@@ -20,6 +20,8 @@ import org.apache.synapse.core.axis2.Axis2Sender;
 import org.apache.synapse.mediators.AbstractMediator;
 import org.json.JSONObject;
 
+import com.nimbusds.jwt.SignedJWT;
+
 public class JwtAuthMediator extends AbstractMediator {
 
     private static final Log log = LogFactory.getLog(JwtAuthMediator.class);
@@ -120,17 +122,17 @@ public class JwtAuthMediator extends AbstractMediator {
         }
 
         // validate the JWT token
-        boolean isValidJWT;
+        SignedJWT signedJWT;
         try {
-            isValidJWT = validator.validateToken(jwtToken, jwksUrls);
-            log.debug("isValidJWT: " + isValidJWT);
+            signedJWT = validator.validateToken(jwtToken, jwksUrls);
+            log.debug("JWT is valid");
         } catch (Exception e) {
             handleException(e.getMessage(), messageContext);
             return false;
         }
         boolean isTokenExpired;
         try {
-            isTokenExpired = validator.isTokenExpired(jwtToken);
+            isTokenExpired = validator.isTokenExpired(signedJWT);
             if (isTokenExpired) {
                 handleException("JWT token is expired", messageContext);
                 return false;
