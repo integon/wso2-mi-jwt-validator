@@ -53,29 +53,29 @@ public class JWTValidator {
      * @throws Exception
      */
     public SignedJWT validateToken(String jwtToken, ArrayList<URL> jwksUrls) throws Exception {
-        SignedJWT signedJWT;
+        SignedJWT parsedJWT;
         // Parse the JWT token
         try {
-            signedJWT = SignedJWT.parse(jwtToken);
+            parsedJWT = SignedJWT.parse(jwtToken);
             log.debug("JWT token parsed successfully");
         } catch (ParseException e) {
             log.error("Failed to parse JWT token: " + e.getMessage());
             throw new Exception("Invalid JWT token");
         }
         loadAndCacheJWKSet(jwksUrls);
-        getAndVerifyJWKByKid(signedJWT);
+        getAndVerifyJWKByKid(parsedJWT);
         convertJWKToPublicKey(jwk);
 
         JWSVerifier verifier = new RSASSAVerifier(publicKey);
         log.debug("Verifier created successfully");
 
         // Create a verifier using the public RSA key
-        if (!signedJWT.verify(verifier)) {
+        if (!parsedJWT.verify(verifier)) {
             log.debug("Failed to validate JWT using the provided JWKS");
             throw new Exception("Failed to validate JWT using the provided JWKS");
         }
         log.debug("JWT token validated successfully");
-        return signedJWT;
+        return parsedJWT;
     }
 
     /**
@@ -87,9 +87,9 @@ public class JWTValidator {
      * @return true if the JWT token is expired
      * @throws Exception
      */
-    public boolean isTokenExpired(SignedJWT signedJWT) throws Exception {
+    public boolean isTokenExpired(SignedJWT parsedJWT) throws Exception {
         // Check if token is expired
-        if (signedJWT.getJWTClaimsSet().getExpirationTime().before(new java.util.Date())) {
+        if (parsedJWT.getJWTClaimsSet().getExpirationTime().before(new java.util.Date())) {
             log.debug("JWT token is expired");
             return true;
         }
@@ -109,22 +109,13 @@ public class JWTValidator {
      * @return true if the claims are valid
      * @throws Exception
      */
-    public boolean areClaimsValid(String jwtToken, HashMap<String, String> claims) throws Exception {
-        SignedJWT signedJWT;
-        // Parse the JWT token
-        try {
-            signedJWT = SignedJWT.parse(jwtToken);
-        } catch (ParseException e) {
-            log.error("Failed to parse JWT token: " + e.getMessage());
-            throw new Exception("Invalid JWT token");
-        }
-
+    public boolean areClaimsValid(SignedJWT parsedJWT, HashMap<String, String> claims) throws Exception {
         // Claim validation
         if (claims.get("iat") != null) {
             // Todo: Get long or null --> Try and Catch with ignore Exception with info log
             if (isLongParseable(claims.get("iat").toString())) {
                 Long iatClaimValueLong = Long.parseLong(claims.get("iat").toString()) * 1000;
-                if (signedJWT.getJWTClaimsSet().getIssueTime()
+                if (parsedJWT.getJWTClaimsSet().getIssueTime()
                         .before(new Date(System.currentTimeMillis() - iatClaimValueLong))) {
                     log.debug("JWT token issue time claim is too old");
                     throw new Exception("JWT token issue time claim is too old");
@@ -136,14 +127,14 @@ public class JWTValidator {
         }
 
         if (claims.get("iss") != null) {
-            if (!signedJWT.getJWTClaimsSet().getIssuer().matches(claims.get("iss").toString())) {
+            if (!parsedJWT.getJWTClaimsSet().getIssuer().matches(claims.get("iss").toString())) {
                 log.debug("JWT token issuer claim does not match the expected value: " + claims.get("iss").toString());
                 throw new Exception("JWT token issuer claim does not match the expected value");
             }
             log.debug("JWT token issuer claim matches the expected value");
         }
         if (claims.get("sub") != null) {
-            if (!signedJWT.getJWTClaimsSet().getSubject().matches(claims.get("sub").toString())) {
+            if (!parsedJWT.getJWTClaimsSet().getSubject().matches(claims.get("sub").toString())) {
                 log.debug("JWT token subject claim does not match the expected value: " + claims.get("sub").toString());
                 throw new Exception("JWT token subject claim does not match the expected value");
             }
@@ -151,7 +142,7 @@ public class JWTValidator {
         }
         if (claims.get("aud") != null) {
             boolean audMatch = false;
-            for (String audience : signedJWT.getJWTClaimsSet().getAudience()) {
+            for (String audience : parsedJWT.getJWTClaimsSet().getAudience()) {
                 if (audience.matches(claims.get("aud").toString())) {
                     audMatch = true;
                 }
@@ -170,11 +161,11 @@ public class JWTValidator {
                 jtiMapLastCleaned = System.currentTimeMillis();
                 log.debug("Created a new JTI map");
             }
-            if (jtiMap.containsKey(signedJWT.getJWTClaimsSet().getJWTID())) {
-                log.debug("JWT with this JWT ID has already been used: " + signedJWT.getJWTClaimsSet().getJWTID());
+            if (jtiMap.containsKey(parsedJWT.getJWTClaimsSet().getJWTID())) {
+                log.debug("JWT with this JWT ID has already been used: " + parsedJWT.getJWTClaimsSet().getJWTID());
                 throw new Exception("JWT with this JWT ID has already been used");
             } else {
-                jtiMap.put(signedJWT.getJWTClaimsSet().getJWTID(), true);
+                jtiMap.put(parsedJWT.getJWTClaimsSet().getJWTID(), true);
                 log.debug("Added JWT ID to the JTI map");
             }
             log.debug("JWT token JTI claim is valid");
@@ -222,7 +213,7 @@ public class JWTValidator {
      * This method retrieves the JWK by matching the key id (kid) present in the JWT
      * header.
      * 
-     * @param signedJWT
+     * @param parsedJWT
      *                  the signed JWT token
      * @return the JWK object that corresponds to the given key id in the JWT
      *         header.
@@ -231,8 +222,8 @@ public class JWTValidator {
      *                   JWK
      *                   found in the JWKS set.
      */
-    private void getAndVerifyJWKByKid(SignedJWT signedJWT) throws Exception {
-        JWSHeader header = signedJWT.getHeader();
+    private void getAndVerifyJWKByKid(SignedJWT parsedJWT) throws Exception {
+        JWSHeader header = parsedJWT.getHeader();
         String kid = header.getKeyID();
         if (header == null || kid == null) {
             log.debug("Invalid JWT token: JWT header or key id is null");

@@ -138,9 +138,9 @@ public class JwtAuthHandler implements Handler {
         validator.setCacheTimeouts(jwksTimeout, jwksRefreshTime);
 
         // validate the JWT token
-        SignedJWT signedJWT;
+        SignedJWT parsedJWT;
         try {
-            signedJWT = validator.validateToken(jwtToken, jwksUrls);
+            parsedJWT = validator.validateToken(jwtToken, jwksUrls);
             log.debug("JWT is valid");
         } catch (Exception e) {
             handleException(e.getMessage(), messageContext);
@@ -149,7 +149,7 @@ public class JwtAuthHandler implements Handler {
         // Check if the token is expired
         boolean isTokenExpired;
         try {
-            isTokenExpired = validator.isTokenExpired(signedJWT);
+            isTokenExpired = validator.isTokenExpired(parsedJWT);
             if (isTokenExpired) {
                 handleException("JWT token is expired", messageContext);
                 return false;
@@ -190,7 +190,7 @@ public class JwtAuthHandler implements Handler {
         }
         if (!allValuesAreNull) {
             try {
-                validator.areClaimsValid(jwtToken, claims);
+                validator.areClaimsValid(parsedJWT, claims);
             } catch (Exception e) {
                 handleException(e.getMessage(), messageContext);
                 return false;
