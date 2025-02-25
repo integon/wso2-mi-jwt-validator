@@ -67,6 +67,7 @@ public class JwtAuthMediator extends AbstractMediator {
         String jwksEnvVariable = (String) messageContext.getProperty("jwksEnvVariable");
         if ((jwksEndpoint == null || jwksEndpoint.isEmpty())
                 && (jwksEnvVariable == null || jwksEnvVariable.isEmpty())) {
+            log.error("JWKS endpoint not found in the message context");
             handleException("JWKS endpoint not found in the message", messageContext);
             return false;
         }
@@ -100,25 +101,26 @@ public class JwtAuthMediator extends AbstractMediator {
         validator.setCacheTimeouts(jwksTimeout, jwksRefreshTime);
 
         String jwtToken = (String) messageContext.getProperty("jwtToken");
-        if (jwtToken == null || jwtToken.isEmpty()) {
-            log.debug("JWT not found in the message");
-            handleException("JWT not found in the message", messageContext);
-            return false;
-        }
-
-        // Check if the token starts with "Bearer "
-        if (!jwtToken.trim().startsWith("Bearer")) {
-            log.debug("Invalid JWT format: " + jwtToken);
-            handleException("Invalid JWT format", messageContext);
-            return false;
-        } else {
-            // Remove "Bearer " from the token
-            jwtToken = jwtToken.substring(7);
-            if (jwtToken == null || jwtToken.isEmpty()) {
-                log.debug("JWT token not found in the message");
-                handleException("JWT token not found in the message", messageContext);
+        // Extract the token from the Authorization header
+        if (jwtToken != null && !jwtToken.isEmpty()) {
+            jwtToken = jwtToken.trim();
+            if (jwtToken.startsWith("Bearer ")) {
+                // Remove "Bearer " prefix
+                jwtToken = jwtToken.substring(7).trim();
+                if (jwtToken.isEmpty()) {
+                    log.debug("Empty JWT token after Bearer prefix");
+                    handleException("JWT token is empty", messageContext);
+                    return false;
+                }
+            } else {
+                log.debug("Invalid Authorization header format: " + jwtToken);
+                handleException("Invalid Authorization header format - must start with 'Bearer'", messageContext);
                 return false;
             }
+        } else {
+            log.debug("JWT token not found in the message");
+            handleException("JWT token not found in the message", messageContext);
+            return false;
         }
 
         // validate the JWT token
@@ -134,6 +136,7 @@ public class JwtAuthMediator extends AbstractMediator {
         try {
             isTokenExpired = validator.isTokenExpired(parsedJWT);
             if (isTokenExpired) {
+                log.debug("JWT token is expired");
                 handleException("JWT token is expired", messageContext);
                 return false;
             }
