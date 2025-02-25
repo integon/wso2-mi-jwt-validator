@@ -331,4 +331,12 @@ public class JWTValidator {
             return false;
         }
     }
+
+    public long getTtl() {
+        return ttl;
+    }
+    
+    public long getRefreshTimeout() {
+        return refreshTimeout;
+    }
 }

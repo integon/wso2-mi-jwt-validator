@@ -4,6 +4,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -551,6 +552,33 @@ class JwtValidatorTest {
 
                 assertThat(thrown).isInstanceOf(Exception.class)
                                 .hasMessageContaining("JWT with this JWT ID has already been used");
+        }
+
+        @Test
+        void setCacheTimeouts_WhenJwksTimeoutAndjwksRefreshTimeAreNull_ShouldSetDefaultValues(){
+                String jwksTimeout = null;
+                String jwksRefreshTime = null;
+                jwtValidator.setCacheTimeouts(jwksTimeout, jwksRefreshTime);
+                assertEquals(60 * 60 * 1000, jwtValidator.getTtl());
+                assertEquals(30 * 60 * 1000, jwtValidator.getRefreshTimeout());
+        }
+
+        @Test
+        void setCacheTimeouts_WhenJwksTimeoutAndjwksRefreshTimeAreNotLong_ShouldSetDefaultValues(){
+                String jwksTimeout = "1.1";
+                String jwksRefreshTime = "1.1";
+                jwtValidator.setCacheTimeouts(jwksTimeout, jwksRefreshTime);
+                assertEquals(60 * 60 * 1000, jwtValidator.getTtl());
+                assertEquals(30 * 60 * 1000, jwtValidator.getRefreshTimeout());
+        }
+
+        @Test
+        void setCacheTimeouts_WhenJwksTimeoutAndjwksRefreshTimeAreLong_ShouldSetValues(){
+                String jwksTimeout = "1800";
+                String jwksRefreshTime = "900";
+                jwtValidator.setCacheTimeouts(jwksTimeout, jwksRefreshTime);
+                assertEquals(30 * 60 * 1000, jwtValidator.getTtl());
+                assertEquals(15 * 60 * 1000, jwtValidator.getRefreshTimeout());
         }
 
 }
