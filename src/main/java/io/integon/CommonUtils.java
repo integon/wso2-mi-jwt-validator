@@ -1,6 +1,5 @@
 package io.integon;
 
-
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.xml.namespace.QName;
@@ -14,6 +13,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.http.HttpStatus;
 import org.apache.synapse.MessageContext;
+
 /**
  * This class contains common methods used by the other classes
  */
@@ -21,29 +21,33 @@ public class CommonUtils {
 
     private static final Log log = LogFactory.getLog(JwtAuthMediator.class);
 
-    // Regex to validate the url
+    // Regex to validate URLs
     public static final String URL_REGEX = "(?i)\\b((?:https?://|www\\d{0,3}[.]|[a-z0-9.\\-]+[.][a-z]{2,4}/)(?:[^\\s()<>]+|\\(([^\\s()<>]+|(\\([^\\s()<>]+\\)))*\\))+(?:\\(([^\\s()<>]+|(\\([^\\s()<>]+\\)))*\\)|[^\\s`!()\\[\\]{};:'\".,<>?«»“”‘’]))";
 
     /**
-     * This method checks if the jwks url is valid
-     * 
-     * @param jwksUrl
-     * @return true if the url is valid, false otherwise
+     * Checks if the provided JWKS (JSON Web Key Set) URL is valid.
+     *
+     * @param jwksUrl The JWKS URL string to be validated.
+     * @return {@code true} if the URL matches the expected format, {@code false}
+     *         otherwise.
      */
     public static boolean containsUrl(String jwksUrl) {
         Pattern pattern = Pattern.compile(URL_REGEX);
         Matcher matcher = pattern.matcher(jwksUrl);
         boolean result = matcher.find();
-        log.debug("The url is valid: " + result);
+        log.debug("The URL is valid: " + result);
         return result;
     }
 
     /**
-     * This method sets the error message to the message context
-     * 
-     * @param messageContext
-     * @param message
-     * @return MessageContext
+     * Sets an error message in the provided message context by constructing a SOAP
+     * response with JSON-like structure.
+     *
+     * @param messageContext The Synapse message context to which the error message
+     *                       should be set.
+     * @param message        The error message text that will be included in the
+     *                       response payload.
+     * @return The updated {@link MessageContext} with the error message set.
      */
     public static MessageContext setJsonEnvelopMessageContext(MessageContext messageContext, String message) {
         // Create a SOAPFactory and an XML payload
@@ -51,10 +55,10 @@ public class CommonUtils {
         OMElement payload = soapFactory.createOMElement("jsonObject", null);
         OMElement codeElement = soapFactory.createOMElement(new QName("status"));
         codeElement.setText(String.valueOf(HttpStatus.SC_UNAUTHORIZED));
-        OMElement messagElement = soapFactory.createOMElement(new QName("message"));
-        messagElement.setText(String.valueOf(message));
+        OMElement messageElement = soapFactory.createOMElement(new QName("message"));
+        messageElement.setText(message);
         payload.addChild(codeElement);
-        payload.addChild(messagElement);
+        payload.addChild(messageElement);
 
         // Create a SOAPEnvelope and add the XML payload to its body
         SOAPEnvelope envelope = soapFactory.getDefaultEnvelope();
@@ -63,11 +67,10 @@ public class CommonUtils {
         try {
             // Set the response envelope to the message context
             messageContext.setEnvelope(envelope);
-            log.debug("The error message is set to the message context");
+            log.debug("The error message is set in the message context");
         } catch (AxisFault e) {
-            e.printStackTrace();
+            log.error("Failed to set error message in the message context", e);
         }
         return messageContext;
     }
-
 }
