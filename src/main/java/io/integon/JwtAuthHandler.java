@@ -98,7 +98,15 @@ public class JwtAuthHandler implements Handler {
             return false;
         }
         // Remove "Bearer " from the token
-        String jwtToken = authHeader.substring(7);
+        String jwtToken;   
+        try {
+            jwtToken = authHeader.substring(7);
+        } catch (IndexOutOfBoundsException e) {
+            log.debug("Invalid JWT token format: " + authHeader);
+            handleException("Invalid Authorization header format", messageContext);
+            return false;
+        }
+        
         if (jwtToken == null || jwtToken.isEmpty()) {
             log.debug("JWT token not found in the message");
             handleException("JWT token not found in the message", messageContext);
@@ -111,7 +119,7 @@ public class JwtAuthHandler implements Handler {
                 && CommonUtils.containsUrl(System.getenv().get(jwksEnvVariable))) {
             jwksEndpoint = System.getenv().get(jwksEnvVariable);
         } else {
-            // Check if the JWKS endpoint
+            // Check if the JWKS endpoint is empty
             if (jwksEndpoint == null || jwksEndpoint.isEmpty()) {
                 handleException("JWKS endpoint not found", messageContext);
                 return false;
