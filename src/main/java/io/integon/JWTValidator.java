@@ -102,8 +102,8 @@ public class JWTValidator {
      * This method only gets called if the JWT token is valid and not expired and
      * there are claims to validate
      * 
-     * @param jwtToken
-     *                 The JWT token to check
+     * @param parsedJWT
+     *                 The parsed JWT token to check
      * @param claims
      *                 The claims to validate
      * @return true if the claims are valid
