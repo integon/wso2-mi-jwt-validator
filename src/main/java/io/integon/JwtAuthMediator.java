@@ -52,7 +52,7 @@ public class JwtAuthMediator extends AbstractMediator {
      * @param messageContext
      *                       Synapse message context
      * @return true if the JWT token is valid
-     * @throws SynapseException
+     * @throws SynapseException If any error occurs during mediate.
      */
     @Override
     public boolean mediate(MessageContext messageContext) {

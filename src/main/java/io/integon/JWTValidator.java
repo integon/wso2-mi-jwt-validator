@@ -50,7 +50,7 @@ public class JWTValidator {
      * @param jwksUrls
      *                 The JWKS endpoint to use for validation
      * @return true if the JWT token is valid
-     * @throws Exception
+     * @throws Exception If any error occurs during token validation.
      */
     public SignedJWT validateToken(String jwtToken, ArrayList<URL> jwksUrls) throws Exception {
         SignedJWT parsedJWT;
@@ -85,7 +85,7 @@ public class JWTValidator {
      * @param parsedJWT
      *                 The JWT token to check
      * @return true if the JWT token is expired
-     * @throws Exception
+     * @throws Exception If any error occurs during token validation.
      */
     public boolean isTokenExpired(SignedJWT parsedJWT) throws Exception {
         // Check if token is expired
@@ -102,12 +102,12 @@ public class JWTValidator {
      * This method only gets called if the JWT token is valid and not expired and
      * there are claims to validate
      * 
-     * @param jwtToken
-     *                 The JWT token to check
+     * @param parsedJWT
+     *                 The parsed JWT token to check
      * @param claims
      *                 The claims to validate
      * @return true if the claims are valid
-     * @throws Exception
+     * @throws Exception If any error occurs during token validation.
      */
     public boolean areClaimsValid(SignedJWT parsedJWT, HashMap<String, String> claims) throws Exception {
         // Claim validation
