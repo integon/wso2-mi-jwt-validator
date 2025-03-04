@@ -17,6 +17,8 @@ import org.apache.synapse.core.axis2.Axis2Sender;
 import org.apache.synapse.rest.Handler;
 import org.json.JSONObject;
 
+import com.nimbusds.jwt.SignedJWT;
+
 /**
  * This class is used to validate the JWT token Implements the Handler interface
  * from the Synapse REST API to be used in a Micro Integrator API
@@ -96,7 +98,15 @@ public class JwtAuthHandler implements Handler {
             return false;
         }
         // Remove "Bearer " from the token
-        String jwtToken = authHeader.substring(7);
+        String jwtToken;   
+        try {
+            jwtToken = authHeader.substring(7);
+        } catch (IndexOutOfBoundsException e) {
+            log.debug("Invalid JWT token format: " + authHeader);
+            handleException("Invalid Authorization header format", messageContext);
+            return false;
+        }
+        
         if (jwtToken == null || jwtToken.isEmpty()) {
             log.debug("JWT token not found in the message");
             handleException("JWT token not found in the message", messageContext);
@@ -109,7 +119,7 @@ public class JwtAuthHandler implements Handler {
                 && CommonUtils.containsUrl(System.getenv().get(jwksEnvVariable))) {
             jwksEndpoint = System.getenv().get(jwksEnvVariable);
         } else {
-            // Check if the JWKS endpoint
+            // Check if the JWKS endpoint is empty
             if (jwksEndpoint == null || jwksEndpoint.isEmpty()) {
                 handleException("JWKS endpoint not found", messageContext);
                 return false;
@@ -136,10 +146,10 @@ public class JwtAuthHandler implements Handler {
         validator.setCacheTimeouts(jwksTimeout, jwksRefreshTime);
 
         // validate the JWT token
-        boolean isValidJWT;
+        SignedJWT parsedJWT;
         try {
-            isValidJWT = validator.validateToken(jwtToken, jwksUrls);
-            log.debug("isValidJWT: " + isValidJWT);
+            parsedJWT = validator.validateToken(jwtToken, jwksUrls);
+            log.debug("JWT is valid");
         } catch (Exception e) {
             handleException(e.getMessage(), messageContext);
             return false;
@@ -147,7 +157,7 @@ public class JwtAuthHandler implements Handler {
         // Check if the token is expired
         boolean isTokenExpired;
         try {
-            isTokenExpired = validator.isTokenExpired(jwtToken);
+            isTokenExpired = validator.isTokenExpired(parsedJWT);
             if (isTokenExpired) {
                 handleException("JWT token is expired", messageContext);
                 return false;
@@ -188,7 +198,7 @@ public class JwtAuthHandler implements Handler {
         }
         if (!allValuesAreNull) {
             try {
-                validator.areClaimsValid(jwtToken, claims);
+                validator.areClaimsValid(parsedJWT, claims);
             } catch (Exception e) {
                 handleException(e.getMessage(), messageContext);
                 return false;
