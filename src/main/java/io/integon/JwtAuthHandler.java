@@ -49,6 +49,7 @@ public class JwtAuthHandler implements Handler {
         // To change body of implemented methods use File | Settings | File Templates.
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public Map getProperties() {
         return null; // To change body of implemented methods use File | Settings | File Templates.
@@ -81,6 +82,7 @@ public class JwtAuthHandler implements Handler {
         // retrieve the JWT token from transport headers
         String authHeader = null;
         if (headers instanceof Map) {
+            @SuppressWarnings("rawtypes")
             Map headersMap = (Map) headers;
             authHeader = (String) headersMap.get(jwtHeader);
         }
@@ -247,6 +249,7 @@ public class JwtAuthHandler implements Handler {
         Object headers = axis2MessageContext.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
 
         // Clear the transport headers
+        @SuppressWarnings("rawtypes")
         Map headersMap = (Map) headers;
         headersMap.clear();
 
