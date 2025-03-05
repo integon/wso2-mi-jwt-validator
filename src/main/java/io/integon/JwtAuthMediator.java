@@ -62,25 +62,15 @@ public class JwtAuthMediator extends AbstractMediator {
             log.debug("JWTValidator: " + validator);
             cachedTimeValidator = System.currentTimeMillis();
         }
-
         String jwksEndpoint = (String) messageContext.getProperty("jwksEndpoint");
-        String jwksEnvVariable = (String) messageContext.getProperty("jwksEnvVariable");
-        if ((jwksEndpoint == null || jwksEndpoint.isEmpty())
-                && (jwksEnvVariable == null || jwksEnvVariable.isEmpty())) {
-            log.error("JWKS endpoint not found in the message context");
-            handleException("JWKS endpoint not found in the message", messageContext);
+        String resolvedJwksEndpoint = CommonUtils.resolveConfigValue(jwksEndpoint);
+        if (resolvedJwksEndpoint == null) {
+            handleException("JWKS endpoint not found", messageContext);
             return false;
         }
 
-        // If jwksEnvVariable is set, check if the environment variable contains a valid URL
-        if (jwksEnvVariable != null) {
-            jwksEndpoint = System.getenv().get(jwksEnvVariable);
-            log.debug("JWKS endpoint from Env Variable " + jwksEnvVariable + ": " + jwksEndpoint);
-        }
-
         ArrayList<URL> jwksUrls = new ArrayList<>();
-        
-        String[] jwksUrlsSplit = jwksEndpoint.split(",");
+        String[] jwksUrlsSplit = resolvedJwksEndpoint.split(",");
         for (String jkwsUrlString : jwksUrlsSplit) {
             try {
                 // Trim any spaces and attempt to create a URL

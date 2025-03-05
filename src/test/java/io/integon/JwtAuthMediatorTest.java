@@ -13,11 +13,17 @@ import java.lang.reflect.Field;
 import org.apache.synapse.MessageContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import com.nimbusds.jwt.SignedJWT;
 
+import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+
+@ExtendWith(SystemStubsExtension.class)
 class JwtAuthMediatorTest {
     private JwtAuthMediator mediator;
 
@@ -26,6 +32,9 @@ class JwtAuthMediatorTest {
 
     @Mock
     private JWTValidator jwtValidator;
+
+    @SystemStub
+    private EnvironmentVariables environmentVariables;
 
     @BeforeEach
     void setUp() throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
@@ -47,7 +56,6 @@ class JwtAuthMediatorTest {
     @Test
     void testMediate_MissingJwksEndpoint_ShouldThrowException() {
         when(messageContext.getProperty("jwksEndpoint")).thenReturn(null);
-        when(messageContext.getProperty("jwksEnvVariable")).thenReturn(null);
 
         assertThrows(RuntimeException.class, () -> mediator.mediate(messageContext));
 
@@ -60,10 +68,37 @@ class JwtAuthMediatorTest {
         assertThrows(RuntimeException.class, () -> mediator.mediate(messageContext));
     }
 
+    @Test
+    void testMediate_InvalidJwksUrlFromJwksEndpointFromEnv_ShouldThrowException() {
+        environmentVariables.set("JWKS_ENDPOINT", "invalid-url");
+        when(messageContext.getProperty("jwksEndpoint")).thenReturn("env:JWKS_ENDPOINT");
+        assertThrows(RuntimeException.class, () -> mediator.mediate(messageContext));
+    }
+
+    @Test
+    void testMediate_MissingJwksUrlFromJwksEndpointFromEnv_ShouldThrowException() {
+        environmentVariables.set("JWKS_ENDPOINT", "");
+        when(messageContext.getProperty("jwksEndpoint")).thenReturn("env:JWKS_ENDPOINT");
+        assertThrows(RuntimeException.class, () -> mediator.mediate(messageContext));
+    }
+
     @SuppressWarnings("unchecked")
     @Test
     void testMediate_ValidJwt_ShouldPass() throws Exception {
         when(messageContext.getProperty("jwksEndpoint")).thenReturn("https://valid-url-1.com,https://valid-url-2.com");
+        when(messageContext.getProperty("jwtToken")).thenReturn("Bearer valid.jwt.token");
+
+        when(jwtValidator.validateToken(anyString(), any(ArrayList.class))).thenReturn(mock(SignedJWT.class));
+        when(jwtValidator.isTokenExpired(any())).thenReturn(false);
+
+        assertTrue(mediator.mediate(messageContext));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void testMediate_ValidJwtWithJwksEndpointFromEnvVar_ShouldPass() throws Exception {
+        environmentVariables.set("JWKS_ENDPOINT", "https://valid-url-1.com,https://valid-url-2.com");
+        when(messageContext.getProperty("jwksEndpoint")).thenReturn("env:JWKS_ENDPOINT");
         when(messageContext.getProperty("jwtToken")).thenReturn("Bearer valid.jwt.token");
 
         when(jwtValidator.validateToken(anyString(), any(ArrayList.class))).thenReturn(mock(SignedJWT.class));
