@@ -216,6 +216,7 @@ public class JwtAuthMediator extends AbstractMediator {
                 .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
         if (transportHeaders != null) {
             // Clear the transport headers
+            @SuppressWarnings("rawtypes")
             Map transportHeadersMap = (Map) transportHeaders;
             transportHeadersMap.clear();
         }
