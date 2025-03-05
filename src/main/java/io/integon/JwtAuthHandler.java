@@ -37,8 +37,8 @@ public class JwtAuthHandler implements Handler {
     private String jwksTimeout;
     private String jwksRefreshTime;
 
-    private long cachedTimeValidator = 0;
-    private long cachedTimeValidatorReset = 86400000; // 24 hours
+    private long CACHED_TIME_VALIDATOR = 0;
+    private long CACHED_TIME_VALIDATOR_RESET = 86400000; // 24 hours
 
     private JWTValidator validator = null;
 
@@ -67,9 +67,9 @@ public class JwtAuthHandler implements Handler {
     @Override
     public boolean handleRequest(MessageContext messageContext) {
         // initialize the JWTValidator
-        if (validator == null || cachedTimeValidator + cachedTimeValidatorReset < System.currentTimeMillis()) {
+        if (validator == null || CACHED_TIME_VALIDATOR + CACHED_TIME_VALIDATOR_RESET < System.currentTimeMillis()) {
             validator = new JWTValidator();
-            cachedTimeValidator = System.currentTimeMillis();
+            CACHED_TIME_VALIDATOR = System.currentTimeMillis();
             log.debug("JWTValidator initialized: " + validator);
         }
 
@@ -80,7 +80,7 @@ public class JwtAuthHandler implements Handler {
 
         // retrieve the JWT token from transport headers
         String authHeader = null;
-        if (headers != null && headers instanceof Map) {
+        if (headers instanceof Map) {
             Map headersMap = (Map) headers;
             authHeader = (String) headersMap.get(jwtHeader);
         }
@@ -100,14 +100,14 @@ public class JwtAuthHandler implements Handler {
         // Remove "Bearer " from the token
         String jwtToken;   
         try {
-            jwtToken = authHeader.substring(7);
+            jwtToken = authHeader.substring(7).trim();
         } catch (IndexOutOfBoundsException e) {
             log.debug("Invalid JWT token format: " + authHeader);
             handleException("Invalid Authorization header format", messageContext);
             return false;
         }
         
-        if (jwtToken == null || jwtToken.isEmpty()) {
+        if (jwtToken.isEmpty()) {
             log.debug("JWT token not found in the message");
             handleException("JWT token not found in the message", messageContext);
             return false;
