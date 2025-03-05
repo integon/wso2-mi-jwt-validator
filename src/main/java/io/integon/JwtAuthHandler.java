@@ -28,7 +28,6 @@ public class JwtAuthHandler implements Handler {
 
     private String jwtHeader;
     private String jwksEndpoint;
-    private String jwksEnvVariable;
     private String iatClaim;
     private String issClaim;
     private String subClaim;
