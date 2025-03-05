@@ -349,6 +349,7 @@ class JwtAuthHandlerTest {
         when(jwtValidator.isTokenExpired(mockJwt)).thenReturn(false);
 
         // Capture the URLs passed to validateToken
+        @SuppressWarnings("unchecked")
         ArgumentCaptor<ArrayList<URL>> urlCaptor = ArgumentCaptor.forClass(ArrayList.class);
 
         // Execute
