@@ -115,21 +115,14 @@ public class JwtAuthHandler implements Handler {
             return false;
         }
 
-        // If jwksEnvVariable is set, check if the environment variable contains a valid
-        // URL
-        if (jwksEnvVariable != null && System.getenv().get(jwksEnvVariable) != null
-                && CommonUtils.containsUrl(System.getenv().get(jwksEnvVariable))) {
-            jwksEndpoint = System.getenv().get(jwksEnvVariable);
-        } else {
-            // Check if the JWKS endpoint is empty
-            if (jwksEndpoint == null || jwksEndpoint.isEmpty()) {
-                handleException("JWKS endpoint not found", messageContext);
-                return false;
-            }
+        String resolvedJwksEndpoint = CommonUtils.resolveConfigValue(jwksEndpoint);
+        if (resolvedJwksEndpoint == null) {
+            handleException("JWKS endpoint not found", messageContext);
+            return false;
         }
 
         ArrayList<URL> jwksUrls = new ArrayList<>();
-        String[] jwksUrlsSplit = jwksEndpoint.split(",");
+        String[] jwksUrlsSplit = resolvedJwksEndpoint.split(",");
         for (String jkwsUrlString : jwksUrlsSplit) {
             try {
                 // Trim any spaces and attempt to create a URL
@@ -281,16 +274,6 @@ public class JwtAuthHandler implements Handler {
     // Interface handler injection
     public void setJwksEndpoint(String jwks) {
         this.jwksEndpoint = jwks;
-    }
-
-    // Interface handler injection
-    public String getJwksEnvVariable() {
-        return jwksEnvVariable;
-    }
-
-    // Interface handler injection
-    public void setJwksEnvVariable(String jwksEnv) {
-        jwksEnvVariable = jwksEnv;
     }
 
     // Interface handler injection

@@ -14,6 +14,7 @@ import org.apache.synapse.core.axis2.Axis2MessageContext;
 import org.apache.synapse.core.axis2.Axis2Sender;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -21,6 +22,11 @@ import org.mockito.MockitoAnnotations;
 
 import com.nimbusds.jwt.SignedJWT;
 
+import uk.org.webcompere.systemstubs.environment.EnvironmentVariables;
+import uk.org.webcompere.systemstubs.jupiter.SystemStub;
+import uk.org.webcompere.systemstubs.jupiter.SystemStubsExtension;
+
+@ExtendWith(SystemStubsExtension.class)
 class JwtAuthHandlerTest {
 
     private JwtAuthHandler handler;
@@ -38,6 +44,9 @@ class JwtAuthHandlerTest {
     private JWTValidator jwtValidator;
 
     private Map<String, String> headers;
+
+    @SystemStub
+    private EnvironmentVariables environmentVariables;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -66,7 +75,7 @@ class JwtAuthHandlerTest {
         validatorField.set(handler, jwtValidator);
 
         // Set the cached time to a recent value to prevent re-initialization
-        Field cachedTimeValidatorField = JwtAuthHandler.class.getDeclaredField("cachedTimeValidator");
+        Field cachedTimeValidatorField = JwtAuthHandler.class.getDeclaredField("CACHED_TIME_VALIDATOR");
         cachedTimeValidatorField.setAccessible(true);
         cachedTimeValidatorField.set(handler, System.currentTimeMillis());
     }
@@ -98,11 +107,10 @@ class JwtAuthHandlerTest {
         mockCommonUtilsAndAxis2Sender(() -> {
             // Execute
             boolean result = handler.handleRequest(messageContext);
-    
+
             // Verify
             assertFalse(result, "Handle request should return false for missing token");
 
-    
             // Verify that the response properties are set correctly
             verify(messageContext).setProperty("RESPONSE", "true");
             verify(messageContext).setTo(null);
@@ -117,10 +125,10 @@ class JwtAuthHandlerTest {
         mockCommonUtilsAndAxis2Sender(() -> {
             // Execute
             boolean result = handler.handleRequest(messageContext);
-    
+
             // Verify
             assertFalse(result, "Handle request should return false for inviald Auth Header");
-    
+
             // Verify that the response properties are set correctly
             verify(messageContext).setProperty("RESPONSE", "true");
             verify(messageContext).setTo(null);
@@ -135,10 +143,10 @@ class JwtAuthHandlerTest {
         mockCommonUtilsAndAxis2Sender(() -> {
             // Execute
             boolean result = handler.handleRequest(messageContext);
-    
+
             // Verify
             assertFalse(result, "Handle request should return false for missing JWT after Bearer Prefix");
-    
+
             // Verify that the response properties are set correctly
             verify(messageContext).setProperty("RESPONSE", "true");
             verify(messageContext).setTo(null);
@@ -150,15 +158,59 @@ class JwtAuthHandlerTest {
         // Setup
         headers.put("Authorization", "Bearer validToken");
         handler.setJwksEndpoint(null);
-        handler.setJwksEnvVariable(null);
 
         mockCommonUtilsAndAxis2Sender(() -> {
             // Execute
             boolean result = handler.handleRequest(messageContext);
-    
+
             // Verify
             assertFalse(result, "Handle request should return false for missing JWKS URL");
-    
+
+            // Verify that the response properties are set correctly
+            verify(messageContext).setProperty("RESPONSE", "true");
+            verify(messageContext).setTo(null);
+        }, "JWKS endpoint not found");
+    }
+
+    @Test
+    void testHandleRequest_WithValidTokenAndJwksEndpointFromEnv() throws Exception {
+        // Setup
+        String validToken = "validJwtToken";
+        headers.put("Authorization", "Bearer " + validToken);
+
+        handler.setJwksEndpoint("env:JWKS_ENDPOINT");
+        environmentVariables.set("JWKS_ENDPOINT", "https://example2.com/.well-known/jwks.json");
+
+        SignedJWT mockJwt = mock(SignedJWT.class);
+
+        // Mock successful validation
+        when(jwtValidator.validateToken(eq(validToken), any())).thenReturn(mockJwt);
+        when(jwtValidator.isTokenExpired(mockJwt)).thenReturn(false);
+
+        // Execute
+        boolean result = handler.handleRequest(messageContext);
+
+        // Verify
+        assertTrue(result, "Handle request should return true for valid token");
+        verify(jwtValidator).validateToken(eq(validToken), any());
+        verify(jwtValidator).isTokenExpired(mockJwt);
+    }
+
+    @Test
+    void testHandleRequest_WithMissingJwksEndpointFromEnv() throws Exception {
+        // Setup
+        String validToken = "validJwtToken";
+        headers.put("Authorization", "Bearer " + validToken);
+
+        handler.setJwksEndpoint("env:JWKS_ENDPOINT");
+
+        mockCommonUtilsAndAxis2Sender(() -> {
+            // Execute
+            boolean result = handler.handleRequest(messageContext);
+
+            // Verify
+            assertFalse(result, "Handle request should return false for missing JWKS URL");
+
             // Verify that the response properties are set correctly
             verify(messageContext).setProperty("RESPONSE", "true");
             verify(messageContext).setTo(null);
@@ -174,10 +226,10 @@ class JwtAuthHandlerTest {
         mockCommonUtilsAndAxis2Sender(() -> {
             // Execute
             boolean result = handler.handleRequest(messageContext);
-    
+
             // Verify
             assertFalse(result, "Handle request should return false for invalid JWKS URL");
-    
+
             // Verify that the response properties are set correctly
             verify(messageContext).setProperty("RESPONSE", "true");
             verify(messageContext).setTo(null);
@@ -198,11 +250,10 @@ class JwtAuthHandlerTest {
         mockCommonUtilsAndAxis2Sender(() -> {
             // Execute
             boolean result = handler.handleRequest(messageContext);
-    
+
             // Verify
             assertFalse(result, "Handle request should return false for expired token");
 
-    
             // Verify that the response properties are set correctly
             verify(messageContext).setProperty("RESPONSE", "true");
             verify(messageContext).setTo(null);
@@ -221,10 +272,10 @@ class JwtAuthHandlerTest {
         mockCommonUtilsAndAxis2Sender(() -> {
             // Execute
             boolean result = handler.handleRequest(messageContext);
-    
+
             // Verify
             assertFalse(result, "Handle request should return false for invalid token");
-    
+
             // Verify that the response properties are set correctly
             verify(messageContext).setProperty("RESPONSE", "true");
             verify(messageContext).setTo(null);
@@ -249,10 +300,10 @@ class JwtAuthHandlerTest {
         mockCommonUtilsAndAxis2Sender(() -> {
             // Execute
             boolean result = handler.handleRequest(messageContext);
-    
+
             // Verify
             assertFalse(result, "Handle request should return false for invalid claims");
-    
+
             // Verify that the response properties are set correctly
             verify(messageContext).setProperty("RESPONSE", "true");
             verify(messageContext).setTo(null);
@@ -354,22 +405,26 @@ class JwtAuthHandlerTest {
         try (
                 MockedStatic<CommonUtils> mockedUtils = mockStatic(CommonUtils.class);
                 MockedStatic<Axis2Sender> mockedSender = mockStatic(Axis2Sender.class)) {
-    
+
             // Mock the CommonUtils.setJsonEnvelopMessageContext call
             mockedUtils.when(() -> CommonUtils.setJsonEnvelopMessageContext(any(), any()))
                     .thenAnswer(invocation -> null);
-    
+
+            // Allow resolveConfigValue to work normally
+            mockedUtils.when(() -> CommonUtils.resolveConfigValue(anyString()))
+                    .thenCallRealMethod();
+
             // Mock the Axis2Sender.sendBack to do nothing
             mockedSender.when(() -> Axis2Sender.sendBack(any())).thenAnswer(invocation -> null);
-    
+
             // Execute the test logic
             testLogic.run();
-    
+
             // Verify the static methods were called with the expected parameters
             mockedUtils.verify(
                     () -> CommonUtils.setJsonEnvelopMessageContext(eq(messageContext), contains(exceptionMessage)));
             mockedSender.verify(() -> Axis2Sender.sendBack(messageContext));
         }
     }
-    
+
 }

@@ -41,8 +41,7 @@ Both .jar files are available on the Maven Central Repository. You can find the 
 | subClaim        | The value of the sub claim that is expected to be present in the JWT Token. | ```<property name="subClaim" value="subject"/>```<br>```<property name="subClaim" value=""/>``` |
 | audClaim        | The value of the aud claim that is expected to be present in the JWT Token. | ```<property name="audClaim" value="audience"/>```<br>```<property name="audClaim" value=""/>``` |
 | jtiClaim        | If the jti claim set to "enabled", the jti claim will be checked against a cache and will be denied if the same Token has already been used. | ```<property name="jtiClaim" value="enabled"/>```            |
-| jwksEndpoint    | The URL of the JWKS Endpoint. Multiple Endpoints are possible with a "," separated list. | ```<property name="jwksEndpoint" value="https://apim.ch/oauth2/jwks"/>``` |
-| jwksEnvVariable | The name of the environment variable that contains the URL of the JWKS Endpoint. Multiple Endpoints in environment variable are possible with a "," separated list. | ```<property name="jwksEnvVariable" value="jwksEndpoint"/>``` |
+| jwksEndpoint    | The URL of the JWKS Endpoint. Multiple Endpoints are possible with a "," separated list. To retrieve the JWKS Endpoint(s) from a environment variable set "env:{NAME_OF_ENV_VAR}" | ```<property name="jwksEndpoint" value="https://apim.ch/oauth2/jwks"/>```<br>```<property name="jwksEndpoint" value="env:JWKS_ENDPOINT"/>``` |
 | jwksTimeout     | The timeout in seconds for the JWKS Endpoint Caching.        | ```<property name="jwksTimeout" value="30"/>```<br>```<property name="jwksTimeout" value=""/>``` |
 | jwksRefreshTime | The time in seconds after which the JWKS Endpoint is refreshed. | ```<property name="jwksRefreshTime" value="15"/>```<br>```<property name="jwksRefreshTime" value=""/>``` |
 | forwardToken    | If set to 'true' the decoded JWT will be set to the message context property 'X-JWT' in json. | ```<property name="forwardToken" value="true"/>```           |
@@ -68,8 +67,7 @@ The following Parameters can be left empty:
 | subClaim        | The value of the sub claim that is expected to be present in the JWT Token. | ```<property name="subClaim" value="subject"/>```<br>```<property name="subClaim" value=""/>``` |
 | audClaim        | The value of the aud claim that is expected to be present in the JWT Token. | ```<property name="audClaim" value="audience"/>```<br>```<property name="audClaim" value=""/>``` |
 | jtiClaim        | If the jti claim set to "enabled", the jti claim will be checked against a cache and will be denied if the same Token has already been used. | ```<property name="jtiClaim" value="enabled"/>```            |
-| jwksEndpoint    | The URL of the JWKS Endpoint. Multiple Endpoints are possible with a "," separated list. | ```<property name="jwksEndpoint" value="https://apim.ch/oauth2/jwks"/>``` |
-| jwksEnvVariable | The name of the environment variable that contains the URL of the JWKS Endpoint. Multiple Endpoints in environment variable are possible with a "," separated list. | ```<property name="jwksEnvVariable" value="jwksEndpoint"/>``` |
+| jwksEndpoint    | The URL of the JWKS Endpoint. Multiple Endpoints are possible with a "," separated list. To retrieve the JWKS Endpoint(s) from a environment variable set "env:{NAME_OF_ENV_VAR}" | ```<property name="jwksEndpoint" value="https://apim.ch/oauth2/jwks"/>```<br>```<property name="jwksEndpoint" value="env:JWKS_ENDPOINT"/>``` |
 | jwksTimeout     | The timeout in seconds for the JWKS Endpoint Caching.        | ```<property name="jwksTimeout" value="30"/>```<br>```<property name="jwksTimeout" value=""/>``` |
 | jwksRefreshTime | The time in seconds after which the JWKS Endpoint is refreshed. | ```<property name="jwksRefreshTime" value="15"/>```<br/>```<property name="jwksRefreshTime" value=""/>``` |
 | forwardToken    | If set to 'true' the decoded JWT will be set to the message context property 'X-JWT' in json. | ```<property name="forwardToken" value="true"/>```           |
@@ -120,7 +118,7 @@ The following examples show how to engage the JWT Handler for MI APIs. Use Cases
       <handlers>
             <handler class="io.integon.JwtAuthHandler">
                   <property name="jwtHeader" value="Authorization"/>
-                  <property name="jwksEnvVariable" value="jwksEndpoint"/>
+                  <property name="jwksEndpoint" value="env:JWKS_ENDPOINT"/>
             </handler>
       </handlers>
 </api>
@@ -218,7 +216,7 @@ The following examples show how to engage the JWT Handler for MI APIs. Use Cases
 		<inSequence>
             <propertyGroup name="jwt-auth-mi">
                   <property name="jwtToken" expression="$trp:Authorization"/>
-                  <property name="jwksEnvVariable" value="jwksEndpoint"/>
+                  <property name="jwksEndpoint" value="env:JWKS_ENDPOINT"/>
             </propertyGroup>
             <class name="io.integon.JwtAuthMediator"/>
             ....
@@ -243,7 +241,7 @@ The following examples show how to engage the JWT Handler for MI APIs. Use Cases
 		<inSequence>
             <propertyGroup name="jwt-auth-mi">
                   <property name="jwtToken" expression="$trp:Authorization"/>
-                  <property name="jwksEnvVariable" value="jwksEndpoint"/>
+                  <property name="jwksEndpoint" value="env:JWKS_ENDPOINT"/>
                   <property name="jwksTimeout" value="3000"/>
 		      <property name="jwksRefreshTime" value="1000"/>
             </propertyGroup>
@@ -275,7 +273,7 @@ The following examples show how to engage the JWT Handler for MI APIs. Use Cases
                   <property name="subClaim" value="admin" />
                   <property name="audClaim" value="Y3wBS2AsdgHW6z2GfEfUpairc_Ma" />
                   <property name="jtiClaim" value="enabled" />
-                  <property name="jwksEnvVariable" value="jwksEndpoint"/>
+                  <property name="jwksEndpoint" value="env:JWKS_ENDPOINT"/>
             </propertyGroup>
             <class name="io.integon.JwtAuthMediator"/>
             ....

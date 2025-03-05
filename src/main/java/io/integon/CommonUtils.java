@@ -73,4 +73,25 @@ public class CommonUtils {
         }
         return messageContext;
     }
+
+    /**
+     * Resolves a value that may be prefixed with "env:", retrieving the
+     * corresponding environment variable if applicable.
+     *
+     * @param value The input string, which may start with "env:" to reference an
+     *              environment variable.
+     * @return The resolved value from the environment if prefixed with "env:",
+     *         otherwise returns the original string.
+     */
+    public static String resolveConfigValue(String value) {
+        if (value == null || value.isEmpty()) {
+            return null; // Return null if input is empty or null
+        }
+        if (value.startsWith("env:")) {
+            String envVarName = value.substring(4); // Extract env var name after "env:"
+            return System.getenv(envVarName); // Get the environment variable's value
+        }
+
+        return value; // Return the original value if not an env reference
+    }
 }
