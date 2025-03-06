@@ -26,16 +26,16 @@ import com.nimbusds.jwt.SignedJWT;
 public class JwtAuthHandler implements Handler {
     private static final Log log = LogFactory.getLog(JwtAuthHandler.class);
 
-    private String JWKS_ENDPOINT_PARAMETER_NAME = "jwksEndpoint";
-    private String JWKS_TIMEOUT_PARAMETER_NAME = "jwksTimeout";
-    private String JWKS_REFRESH_TIME_PARAMETER_NAME = "jwksRefreshTime";
-    private String JWT_HEADER_PARAMETER_NAME = "jwtHeader";
-    private String IAT_CLAIM_PARAMETER_NAME = "iatClaim";
-    private String ISS_CLAIM_PARAMETER_NAME = "issClaim";
-    private String SUB_CLAIM_PARAMETER_NAME = "subClaim";
-    private String AUD_CLAIM_PARAMETER_NAME = "audClaim";
-    private String JTI_CLAIM_PARAMETER_NAME = "jtiClaim";
-    private String FORWARD_TOKEN_PARAMETER_NAME = "forwardToken";
+    private String jwtHeader;
+    private String jwksEndpoint;
+    private String iatClaim;
+    private String issClaim;
+    private String subClaim;
+    private String audClaim;
+    private String jtiClaim;
+    private String jwksTimeout;
+    private String jwksRefreshTime;
+    private String forwardToken;
 
     private long CACHED_TIME_VALIDATOR = 0;
     private long CACHED_TIME_VALIDATOR_RESET = 86400000; // 24 hours
@@ -82,7 +82,7 @@ public class JwtAuthHandler implements Handler {
         if (headers instanceof Map) {
             @SuppressWarnings("rawtypes")
             Map headersMap = (Map) headers;
-            authHeader = (String) headersMap.get(JWT_HEADER_PARAMETER_NAME);
+            authHeader = (String) headersMap.get(jwtHeader);
         }
 
         // Check if the token is null or empty
@@ -106,14 +106,14 @@ public class JwtAuthHandler implements Handler {
             handleException("Invalid Authorization header format", messageContext);
             return false;
         }
-        
+
         if (jwtToken.isEmpty()) {
             log.debug("JWT token not found in the message");
             handleException("JWT token not found in the message", messageContext);
             return false;
         }
 
-        String resolvedJwksEndpoint = CommonUtils.resolveConfigValue(JWKS_ENDPOINT_PARAMETER_NAME);
+        String resolvedJwksEndpoint = CommonUtils.resolveConfigValue(jwksEndpoint);
         if (resolvedJwksEndpoint == null) {
             handleException("JWKS endpoint not found", messageContext);
             return false;
@@ -136,7 +136,7 @@ public class JwtAuthHandler implements Handler {
         }
 
         // Set the cache timeouts
-        validator.setCacheTimeouts(JWKS_TIMEOUT_PARAMETER_NAME, JWKS_REFRESH_TIME_PARAMETER_NAME);
+        validator.setCacheTimeouts(jwksTimeout, jwksRefreshTime);
 
         // validate the JWT token
         SignedJWT parsedJWT;
@@ -161,26 +161,26 @@ public class JwtAuthHandler implements Handler {
         }
         // Check if the claims are valid
         HashMap<String, String> claims = new HashMap<String, String>();
-        if (IAT_CLAIM_PARAMETER_NAME != null && IAT_CLAIM_PARAMETER_NAME.isEmpty()) {
-            IAT_CLAIM_PARAMETER_NAME = null;
+        if (iatClaim != null && iatClaim.isEmpty()) {
+            iatClaim = null;
         }
-        claims.put("iat", IAT_CLAIM_PARAMETER_NAME);
-        if (ISS_CLAIM_PARAMETER_NAME != null && ISS_CLAIM_PARAMETER_NAME.isEmpty()) {
-            ISS_CLAIM_PARAMETER_NAME = null;
+        claims.put("iat", iatClaim);
+        if (issClaim != null && issClaim.isEmpty()) {
+            issClaim = null;
         }
-        claims.put("iss", ISS_CLAIM_PARAMETER_NAME);
-        if (SUB_CLAIM_PARAMETER_NAME != null && SUB_CLAIM_PARAMETER_NAME.isEmpty()) {
-            SUB_CLAIM_PARAMETER_NAME = null;
+        claims.put("iss", issClaim);
+        if (subClaim != null && subClaim.isEmpty()) {
+            subClaim = null;
         }
-        claims.put("sub", SUB_CLAIM_PARAMETER_NAME);
-        if (AUD_CLAIM_PARAMETER_NAME != null && AUD_CLAIM_PARAMETER_NAME.isEmpty()) {
-            AUD_CLAIM_PARAMETER_NAME = null;
+        claims.put("sub", subClaim);
+        if (audClaim != null && audClaim.isEmpty()) {
+            audClaim = null;
         }
-        claims.put("aud", AUD_CLAIM_PARAMETER_NAME);
-        if (JTI_CLAIM_PARAMETER_NAME != null && JTI_CLAIM_PARAMETER_NAME.isEmpty()) {
-            JTI_CLAIM_PARAMETER_NAME = null;
+        claims.put("aud", audClaim);
+        if (jtiClaim != null && jtiClaim.isEmpty()) {
+            jtiClaim = null;
         }
-        claims.put("jti", JTI_CLAIM_PARAMETER_NAME);
+        claims.put("jti", jtiClaim);
         // check if all values are null
         boolean allValuesAreNull = true;
         for (String value : claims.values()) {
@@ -198,7 +198,7 @@ public class JwtAuthHandler implements Handler {
             }
         }
 
-        if (FORWARD_TOKEN_PARAMETER_NAME != null && FORWARD_TOKEN_PARAMETER_NAME.equals("true")) {
+        if (forwardToken != null && forwardToken.equals("true")) {
             log.debug("Set JWT token in the message context");
             // Decode the JWT payload and add it to the transport headers
             String decodedToken = new String(Base64.getDecoder().decode(jwtToken.split("\\.")[1]));
@@ -266,99 +266,95 @@ public class JwtAuthHandler implements Handler {
 
     // Interface handler injection
     public String getJwksEndpoint() {
-        return JWKS_ENDPOINT_PARAMETER_NAME;
+        return jwksEndpoint;
     }
 
     // Interface handler injection
     public void setJwksEndpoint(String jwks) {
-        this.JWKS_ENDPOINT_PARAMETER_NAME = jwks;
+        this.jwksEndpoint = jwks;
     }
 
     // Interface handler injection
     public String getJwtHeader() {
-        return JWT_HEADER_PARAMETER_NAME;
+        return jwtHeader;
     }
 
     // Interface handler injection
     public void setJwtHeader(String header) {
-        this.JWT_HEADER_PARAMETER_NAME = header;
+        this.jwtHeader = header;
     }
 
     // Interface handler injection
     public String getIatClaim() {
-        return IAT_CLAIM_PARAMETER_NAME;
+        return iatClaim;
     }
 
     // Interface handler injection
     public void setIatClaim(String iat) {
-        IAT_CLAIM_PARAMETER_NAME = iat;
+        iatClaim = iat;
     }
 
     // Interface handler injection
     public String getIssClaim() {
-        return ISS_CLAIM_PARAMETER_NAME;
+        return issClaim;
     }
 
     // Interface handler injection
     public void setIssClaim(String iss) {
-        ISS_CLAIM_PARAMETER_NAME = iss;
+        issClaim = iss;
     }
 
     // Interface handler injection
     public String getAudClaim() {
-        return AUD_CLAIM_PARAMETER_NAME;
+        return audClaim;
     }
 
     // Interface handler injection
     public void setAudClaim(String aud) {
-        AUD_CLAIM_PARAMETER_NAME = aud;
+        audClaim = aud;
     }
 
     // Interface handler injection
     public String getSubClaim() {
-        return SUB_CLAIM_PARAMETER_NAME;
+        return subClaim;
     }
 
     // Interface handler injection
     public void setSubClaim(String sub) {
-        this.SUB_CLAIM_PARAMETER_NAME = sub;
+        this.subClaim = sub;
     }
 
     // Interface handler injection
     public String getJtiClaim() {
-        return JTI_CLAIM_PARAMETER_NAME;
+        return jtiClaim;
     }
 
     // Interface handler injection
     public void setJtiClaim(String jti) {
-        JTI_CLAIM_PARAMETER_NAME = jti;
+        jtiClaim = jti;
     }
 
     // Interface handler injection
     public String getJwksTimeout() {
-        return JWKS_TIMEOUT_PARAMETER_NAME;
+        return jwksTimeout;
     }
 
     // Interface handler injection
     public void setJwksTimeout(String timeout) {
-        this.JWKS_TIMEOUT_PARAMETER_NAME = timeout;
+        this.jwksTimeout = timeout;
     }
 
     // Interface handler injection
     public String getJwksRefreshTime() {
-        return JWKS_REFRESH_TIME_PARAMETER_NAME;
+        return jwksRefreshTime;
     }
 
     // Interface handler injection
     public void setJwksRefreshTime(String refresh) {
-        this.JWKS_REFRESH_TIME_PARAMETER_NAME = refresh;
-    }
-
-    public String getForwardToken() {
-        return FORWARD_TOKEN_PARAMETER_NAME;
+        this.jwksRefreshTime = refresh;
     }
 
     public void setForwardToken(String forwardToken) {
-        this.FORWARD_TOKEN_PARAMETER_NAME = forwardToken;
+        this.forwardToken = forwardToken;
     }
 }
