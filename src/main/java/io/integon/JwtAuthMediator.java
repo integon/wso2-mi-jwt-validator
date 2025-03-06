@@ -73,8 +73,7 @@ public class JwtAuthMediator extends AbstractMediator {
             log.debug("JWTValidator: " + validator);
             CACHED_TIME_VALIDATOR = System.currentTimeMillis();
         }
-        String jwksEndpoint = (String) messageContext.getProperty(JWKS_ENDPOINT_PARAMETER_NAME);
-        String resolvedJwksEndpoint = CommonUtils.resolveConfigValue(jwksEndpoint);
+        String resolvedJwksEndpoint = CommonUtils.resolveConfigValue((String) messageContext.getProperty(JWKS_ENDPOINT_PARAMETER_NAME));
         if (resolvedJwksEndpoint == null) {
             handleException("JWKS endpoint not found", messageContext);
             return false;
@@ -98,6 +97,7 @@ public class JwtAuthMediator extends AbstractMediator {
          
         // retrieve JWKS_TIMEOUT & JWKS_REFRESH_TIME from the message context
         String jwksTimeout = (String) messageContext.getProperty(JWKS_TIMEOUT_PARAMETER_NAME);
+
         String jwksRefreshTime = (String) messageContext.getProperty(JWKS_REFRESH_TIME_PARAMETER_NAME);
         validator.setCacheTimeouts(jwksTimeout, jwksRefreshTime);
 
