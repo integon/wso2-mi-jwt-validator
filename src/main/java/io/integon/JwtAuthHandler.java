@@ -136,7 +136,7 @@ public class JwtAuthHandler implements Handler {
         }
 
         // Set the cache timeouts
-        validator.setCacheTimeouts(jwksTimeout, jwksRefreshTime);
+        validator.setCacheTimeouts(CommonUtils.resolveConfigValue(jwksTimeout), CommonUtils.resolveConfigValue(jwksRefreshTime));
 
         // validate the JWT token
         SignedJWT parsedJWT;

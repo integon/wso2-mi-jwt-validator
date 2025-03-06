@@ -173,13 +173,19 @@ class JwtAuthHandlerTest {
     }
 
     @Test
-    void testHandleRequest_WithValidTokenAndJwksEndpointFromEnv() throws Exception {
+    void testHandleRequest_WithValidTokenAndJwksEndpointFromEnvAndJwksTimeoutAndRefreshFromEnv() throws Exception {
         // Setup
         String validToken = "validJwtToken";
         headers.put("Authorization", "Bearer " + validToken);
 
         handler.setJwksEndpoint("env:JWKS_ENDPOINT");
         environmentVariables.set("JWKS_ENDPOINT", "https://example2.com/.well-known/jwks.json");
+
+        handler.setJwksTimeout("env:JWKS_TIMEOUT");
+        environmentVariables.set("JWKS_TIMEOUT", "60");
+
+        handler.setJwksRefreshTime("env:JWKS_REFRESH_TIME");
+        environmentVariables.set("JWKS_REFRESH_TIME", "30");
 
         SignedJWT mockJwt = mock(SignedJWT.class);
 

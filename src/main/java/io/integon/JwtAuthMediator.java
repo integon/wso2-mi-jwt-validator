@@ -96,10 +96,7 @@ public class JwtAuthMediator extends AbstractMediator {
         }
          
         // retrieve JWKS_TIMEOUT & JWKS_REFRESH_TIME from the message context
-        String jwksTimeout = (String) messageContext.getProperty(JWKS_TIMEOUT_PARAMETER_NAME);
-
-        String jwksRefreshTime = (String) messageContext.getProperty(JWKS_REFRESH_TIME_PARAMETER_NAME);
-        validator.setCacheTimeouts(jwksTimeout, jwksRefreshTime);
+        validator.setCacheTimeouts(CommonUtils.resolveConfigValue((String) messageContext.getProperty(JWKS_TIMEOUT_PARAMETER_NAME)), CommonUtils.resolveConfigValue((String) messageContext.getProperty(JWKS_REFRESH_TIME_PARAMETER_NAME)));
 
         String jwtToken = (String) messageContext.getProperty(JWT_TOKEN_PARAMETER_NAME);
         // Extract the token from the Authorization header
