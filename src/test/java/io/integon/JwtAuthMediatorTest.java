@@ -47,9 +47,9 @@ class JwtAuthMediatorTest {
         validatorField.set(mediator, jwtValidator);
 
         // Also set the cached time to a recent value to prevent re-initialization
-        Field cachedTimeValidatorField = JwtAuthMediator.class.getDeclaredField("cachedTimeValidator");
-        cachedTimeValidatorField.setAccessible(true);
-        cachedTimeValidatorField.set(mediator, System.currentTimeMillis());
+        Field CACHED_TIME_VALIDATORField = JwtAuthMediator.class.getDeclaredField("CACHED_TIME_VALIDATOR");
+        CACHED_TIME_VALIDATORField.setAccessible(true);
+        CACHED_TIME_VALIDATORField.set(mediator, System.currentTimeMillis());
 
     }
 

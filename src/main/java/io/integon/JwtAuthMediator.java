@@ -26,8 +26,19 @@ public class JwtAuthMediator extends AbstractMediator {
 
     private static final Log log = LogFactory.getLog(JwtAuthMediator.class);
 
-    private long cachedTimeValidator = 0;
-    private long cachedTimeValidatorReset = 86400000; // 24 hours
+    private long CACHED_TIME_VALIDATOR = 0;
+    private long CACHED_TIME_VALIDATOR_RESET = 86400000; // 24 hours
+
+    private static final String JWKS_ENDPOINT_PARAMETER_NAME = "jwksEndpoint";
+    private static final String JWKS_TIMEOUT_PARAMETER_NAME = "jwksTimeout";
+    private static final String JWKS_REFRESH_TIME_PARAMETER_NAME = "jwksRefreshTime";
+    private static final String JWT_TOKEN_PARAMETER_NAME = "jwtToken";
+    private static final String IAT_CLAIM_PARAMETER_NAME = "iatClaim";
+    private static final String ISS_CLAIM_PARAMETER_NAME = "issClaim";
+    private static final String SUB_CLAIM_PARAMETER_NAME = "subClaim";
+    private static final String AUD_CLAIM_PARAMETER_NAME = "audClaim";
+    private static final String JTI_CLAIM_PARAMETER_NAME = "jtiClaim";
+    private static final String FORWARD_TOKEN_PARAMETER_NAME = "forwardToken";
 
     private JWTValidator validator = null;
 
@@ -57,12 +68,12 @@ public class JwtAuthMediator extends AbstractMediator {
     @Override
     public boolean mediate(MessageContext messageContext) {
         // initialize the JWTValidator
-        if (validator == null || cachedTimeValidator + cachedTimeValidatorReset < System.currentTimeMillis()) {
+        if (validator == null || CACHED_TIME_VALIDATOR + CACHED_TIME_VALIDATOR_RESET < System.currentTimeMillis()) {
             validator = new JWTValidator();
             log.debug("JWTValidator: " + validator);
-            cachedTimeValidator = System.currentTimeMillis();
+            CACHED_TIME_VALIDATOR = System.currentTimeMillis();
         }
-        String jwksEndpoint = (String) messageContext.getProperty("jwksEndpoint");
+        String jwksEndpoint = (String) messageContext.getProperty(JWKS_ENDPOINT_PARAMETER_NAME);
         String resolvedJwksEndpoint = CommonUtils.resolveConfigValue(jwksEndpoint);
         if (resolvedJwksEndpoint == null) {
             handleException("JWKS endpoint not found", messageContext);
@@ -86,11 +97,11 @@ public class JwtAuthMediator extends AbstractMediator {
         }
          
         // retrieve JWKS_TIMEOUT & JWKS_REFRESH_TIME from the message context
-        String jwksTimeout = (String) messageContext.getProperty("jwksTimeout");
-        String jwksRefreshTime = (String) messageContext.getProperty("jwksRefreshTime");
+        String jwksTimeout = (String) messageContext.getProperty(JWKS_TIMEOUT_PARAMETER_NAME);
+        String jwksRefreshTime = (String) messageContext.getProperty(JWKS_REFRESH_TIME_PARAMETER_NAME);
         validator.setCacheTimeouts(jwksTimeout, jwksRefreshTime);
 
-        String jwtToken = (String) messageContext.getProperty("jwtToken");
+        String jwtToken = (String) messageContext.getProperty(JWT_TOKEN_PARAMETER_NAME);
         // Extract the token from the Authorization header
         if (jwtToken != null && !jwtToken.isEmpty()) {
             jwtToken = jwtToken.trim();
@@ -136,23 +147,23 @@ public class JwtAuthMediator extends AbstractMediator {
         }
 
         // retrieve the sub claim from the message context
-        String iatClaim = (String) messageContext.getProperty("iatClaim");
+        String iatClaim = (String) messageContext.getProperty(IAT_CLAIM_PARAMETER_NAME);
         if (iatClaim != null && iatClaim.isEmpty()) {
             iatClaim = null;
         }
-        String issClaim = (String) messageContext.getProperty("issClaim");
+        String issClaim = (String) messageContext.getProperty(ISS_CLAIM_PARAMETER_NAME);
         if (issClaim != null && issClaim.isEmpty()) {
             issClaim = null;
         }
-        String subClaim = (String) messageContext.getProperty("subClaim");
+        String subClaim = (String) messageContext.getProperty(SUB_CLAIM_PARAMETER_NAME);
         if (subClaim != null && subClaim.isEmpty()) {
             subClaim = null;
         }
-        String audClaim = (String) messageContext.getProperty("audClaim");
+        String audClaim = (String) messageContext.getProperty(AUD_CLAIM_PARAMETER_NAME);
         if (audClaim != null && audClaim.isEmpty()) {
             audClaim = null;
         }
-        String jtiClaim = (String) messageContext.getProperty("jtiClaim");
+        String jtiClaim = (String) messageContext.getProperty(JTI_CLAIM_PARAMETER_NAME);
         if (jtiClaim != null && jtiClaim.isEmpty()) {
             jtiClaim = null;
         }
@@ -181,7 +192,7 @@ public class JwtAuthMediator extends AbstractMediator {
         }
         log.debug("JWT validation successful");
 
-        String forwardToken = (String) messageContext.getProperty("forwardToken");
+        String forwardToken = (String) messageContext.getProperty(FORWARD_TOKEN_PARAMETER_NAME);
         log.debug("Forward token: " + forwardToken);
         if (forwardToken != null && forwardToken.equals("true")) {
             log.debug("Set JWT token in the message context");
