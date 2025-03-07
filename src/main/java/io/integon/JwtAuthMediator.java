@@ -179,10 +179,9 @@ public class JwtAuthMediator extends AbstractMediator {
             }
         }
         log.debug("JWT validation successful");
-
-        String forwardToken = (String) messageContext.getProperty(FORWARD_TOKEN_PARAMETER_NAME);
-        log.debug("Forward token: " + forwardToken);
-        if (forwardToken != null && forwardToken.equals("true")) {
+        String resolvedForwardToken = CommonUtils
+                .resolveConfigValue((String) messageContext.getProperty(FORWARD_TOKEN_PARAMETER_NAME));
+        if (resolvedForwardToken != null && resolvedForwardToken.equals("true")) {
             log.debug("Set JWT token in the message context");
             // Decode the JWT payload and add it to the transport headers
             String decodedToken = new String(Base64.getDecoder().decode(jwtToken.split("\\.")[1]));

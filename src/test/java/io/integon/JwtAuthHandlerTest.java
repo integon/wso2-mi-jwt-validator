@@ -475,6 +475,30 @@ class JwtAuthHandlerTest {
     }
 
     @Test
+    void testHandleRequest_ForwardTokenFromEnv() throws Exception {
+        // Setup
+        String jwtToken = "header.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIn0.signature";
+        headers.put("Authorization", "Bearer " + jwtToken);
+
+        environmentVariables.set("FORWARD_TOKEN", "true");
+        handler.setForwardToken("env:FORWARD_TOKEN");
+
+        SignedJWT mockJwt = mock(SignedJWT.class);
+
+        // Mock successful validation
+        when(jwtValidator.validateToken(eq(jwtToken), any())).thenReturn(mockJwt);
+        when(jwtValidator.isTokenExpired(mockJwt)).thenReturn(false);
+
+        // Execute
+        boolean result = handler.handleRequest(messageContext);
+
+        // Verify
+        assertTrue(result, "Handle request should return true for valid token");
+        verify(messageContext).setProperty(eq("X-JWT"), anyString());
+    }
+
+
+    @Test
     void testHandleRequest_MultipleJwksEndpoints() throws Exception {
         // Setup
         String validToken = "validJwtToken";

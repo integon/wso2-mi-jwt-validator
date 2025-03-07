@@ -240,7 +240,20 @@ class JwtAuthMediatorTest {
         when(jwtValidator.validateToken(anyString(), any(ArrayList.class))).thenReturn(mock(SignedJWT.class));
         when(jwtValidator.isTokenExpired(any())).thenReturn(false);
 
-        mediator.mediate(messageContext);
+        assertTrue(mediator.mediate(messageContext));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void testMediate_ForwardTokenEnabledFromEnv_ShouldSetHeader() throws Exception {
+        when(messageContext.getProperty(JWKS_ENDPOINT_PARAMETER_NAME)).thenReturn("https://valid-url.com");
+        when(messageContext.getProperty(JWT_TOKEN_PARAMETER_NAME)).thenReturn("Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.KMUFsIDTnFmyG3nMiGM6H9FNFUROf3wh7SmqJp-QV30");
+        when(messageContext.getProperty(FORWARD_TOKEN_PARAMETER_NAME)).thenReturn("env:FORWARD_TOKEN");
+
+        environmentVariables.set("FORWARD_TOKEN", "true");
+
+        when(jwtValidator.validateToken(anyString(), any(ArrayList.class))).thenReturn(mock(SignedJWT.class));
+        when(jwtValidator.isTokenExpired(any())).thenReturn(false);
 
         assertTrue(mediator.mediate(messageContext));
     }
