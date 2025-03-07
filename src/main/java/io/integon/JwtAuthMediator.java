@@ -39,6 +39,7 @@ public class JwtAuthMediator extends AbstractMediator {
     private static final String AUD_CLAIM_PARAMETER_NAME = "audClaim";
     private static final String JTI_CLAIM_PARAMETER_NAME = "jtiClaim";
     private static final String FORWARD_TOKEN_PARAMETER_NAME = "forwardToken";
+    private static final String RESPOND_PARAMETER_NAME = "respond";
 
     private JWTValidator validator = null;
 
@@ -234,8 +235,9 @@ public class JwtAuthMediator extends AbstractMediator {
         axis2MessageContext.setProperty("ContentType", "application/json");
 
         // Respond from mediator if respond is 'true' else throw SynapseException
-        String respond = (String) messageContext.getProperty("respond");
-        if (respond != null && respond.equals("true")) {
+        String resolvedRespond = CommonUtils
+                .resolveConfigValue((String) messageContext.getProperty(RESPOND_PARAMETER_NAME));
+        if (resolvedRespond != null && resolvedRespond.equals("true")) {
             log.debug("Respond from Mediator");
             // Set the "to" property to null
             messageContext.setTo(null);
