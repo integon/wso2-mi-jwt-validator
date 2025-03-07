@@ -88,7 +88,7 @@ public class JwtAuthHandler implements Handler {
         if (headers instanceof Map) {
             @SuppressWarnings("rawtypes")
             Map headersMap = (Map) headers;
-            authHeader = (String) headersMap.get(jwtHeader);
+            authHeader = (String) headersMap.get(CommonUtils.resolveConfigValue(jwtHeader));
         }
 
         // Check if the token is null or empty

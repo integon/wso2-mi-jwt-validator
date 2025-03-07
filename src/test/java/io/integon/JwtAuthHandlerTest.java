@@ -102,6 +102,31 @@ class JwtAuthHandlerTest {
     }
 
     @Test
+    void testHandleRequest_WithValidTokenFromEnv() throws Exception {
+        // Setup
+        handler.setJwtHeader("env:JWT_HEADER");
+        environmentVariables.set("JWT_HEADER", "X-Authorization");
+
+
+        String validToken = "validJwtToken";
+        headers.put("X-Authorization", "Bearer " + validToken);
+
+        SignedJWT mockJwt = mock(SignedJWT.class);
+
+        // Mock successful validation
+        when(jwtValidator.validateToken(eq(validToken), any())).thenReturn(mockJwt);
+        when(jwtValidator.isTokenExpired(mockJwt)).thenReturn(false);
+
+        // Execute
+        boolean result = handler.handleRequest(messageContext);
+
+        // Verify
+        assertTrue(result, "Handle request should return true for valid token");
+        verify(jwtValidator).validateToken(eq(validToken), any());
+        verify(jwtValidator).isTokenExpired(mockJwt);
+    }
+
+    @Test
     void testHandleRequest_MissingToken() {
         // Setup - no Authorization header
         mockAxis2Sender(() -> {
