@@ -1,5 +1,6 @@
 package io.integon;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -8,12 +9,14 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.lang.reflect.Field;
 
 import org.apache.synapse.MessageContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -41,6 +44,12 @@ class JwtAuthMediatorTest {
     private static final String JWKS_REFRESH_TIME_PARAMETER_NAME = "jwksRefreshTime";
     private static final String JWT_TOKEN_PARAMETER_NAME = "jwtToken";
     private static final String FORWARD_TOKEN_PARAMETER_NAME = "forwardToken";
+    private static final String IAT_CLAIM_PARAMETER_NAME = "iatClaim";
+    private static final String ISS_CLAIM_PARAMETER_NAME = "issClaim";
+    private static final String SUB_CLAIM_PARAMETER_NAME = "subClaim";
+    private static final String AUD_CLAIM_PARAMETER_NAME = "audClaim";
+    private static final String JTI_CLAIM_PARAMETER_NAME = "jtiClaim";
+
 
     @BeforeEach
     void setUp() throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
@@ -142,6 +151,42 @@ class JwtAuthMediatorTest {
         when(jwtValidator.isTokenExpired(any())).thenReturn(false);
 
         assertTrue(mediator.mediate(messageContext));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void testMediate_ValidJwtWithClaimsFromValue_ShouldPass() throws Exception {
+
+        // Set expected claims
+        String expectedIat = "1600";
+        String expectedIss = "expected-iss";
+        String expectedSub = "expected-sub";
+        String expectedAud = "expected-aud";
+        String expectedJti = "true";
+
+        // Capture the actual claims map passed to areClaimsValid
+        ArgumentCaptor<HashMap<String, String>> claimsCaptor = ArgumentCaptor.forClass(HashMap.class);
+
+        when(messageContext.getProperty(JWKS_ENDPOINT_PARAMETER_NAME)).thenReturn("https://valid-url-1.com,https://valid-url-2.com");
+        when(messageContext.getProperty(JWT_TOKEN_PARAMETER_NAME)).thenReturn("Bearer valid.jwt.token");
+        when(messageContext.getProperty(IAT_CLAIM_PARAMETER_NAME)).thenReturn(expectedIat);
+        when(messageContext.getProperty(ISS_CLAIM_PARAMETER_NAME)).thenReturn(expectedIss);
+        when(messageContext.getProperty(SUB_CLAIM_PARAMETER_NAME)).thenReturn(expectedSub);
+        when(messageContext.getProperty(AUD_CLAIM_PARAMETER_NAME)).thenReturn(expectedAud);
+        when(messageContext.getProperty(JTI_CLAIM_PARAMETER_NAME)).thenReturn(expectedJti);
+
+        when(jwtValidator.validateToken(anyString(), any(ArrayList.class))).thenReturn(mock(SignedJWT.class));
+        when(jwtValidator.isTokenExpired(any())).thenReturn(false);
+        when(jwtValidator.areClaimsValid(any(),claimsCaptor.capture())).thenReturn(true);
+
+        assertTrue(mediator.mediate(messageContext));
+        // Verify the claims map contains the expected values
+        HashMap<String, String> capturedClaims = claimsCaptor.getValue();
+        assertEquals(expectedIat, capturedClaims.get("iat"), "Expected 'iat' claim does not match");
+        assertEquals(expectedIss, capturedClaims.get("iss"), "Expected 'iss' claim does not match");
+        assertEquals(expectedSub, capturedClaims.get("sub"), "Expected 'sub' claim does not match");
+        assertEquals(expectedAud, capturedClaims.get("aud"), "Expected 'aud' claim does not match");
+        assertEquals(expectedJti, capturedClaims.get("jti"), "Expected 'jti' claim does not match");
     }
 
     @SuppressWarnings("unchecked")

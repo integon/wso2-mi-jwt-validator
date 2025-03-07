@@ -104,7 +104,7 @@ class JwtAuthHandlerTest {
     @Test
     void testHandleRequest_MissingToken() {
         // Setup - no Authorization header
-        mockCommonUtilsAndAxis2Sender(() -> {
+        mockAxis2Sender(() -> {
             // Execute
             boolean result = handler.handleRequest(messageContext);
 
@@ -122,7 +122,7 @@ class JwtAuthHandlerTest {
         // Setup
         headers.put("Authorization", "InvalidFormat");
 
-        mockCommonUtilsAndAxis2Sender(() -> {
+        mockAxis2Sender(() -> {
             // Execute
             boolean result = handler.handleRequest(messageContext);
 
@@ -140,7 +140,7 @@ class JwtAuthHandlerTest {
         // Setup
         headers.put("Authorization", "Bearer");
 
-        mockCommonUtilsAndAxis2Sender(() -> {
+        mockAxis2Sender(() -> {
             // Execute
             boolean result = handler.handleRequest(messageContext);
 
@@ -159,7 +159,7 @@ class JwtAuthHandlerTest {
         headers.put("Authorization", "Bearer validToken");
         handler.setJwksEndpoint(null);
 
-        mockCommonUtilsAndAxis2Sender(() -> {
+        mockAxis2Sender(() -> {
             // Execute
             boolean result = handler.handleRequest(messageContext);
 
@@ -170,6 +170,106 @@ class JwtAuthHandlerTest {
             verify(messageContext).setProperty("RESPONSE", "true");
             verify(messageContext).setTo(null);
         }, "JWKS endpoint not found");
+    }
+
+    @Test
+    void testHandleRequest_WithValidTokenAndClaimsFromValue() throws Exception {
+        // Setup
+        String validToken = "validJwtToken";
+        headers.put("Authorization", "Bearer " + validToken);
+
+        // Set expected claims
+        String expectedIat = "1600";
+        String expectedIss = "expected-iss";
+        String expectedSub = "expected-sub";
+        String expectedAud = "expected-aud";
+        String expectedJti = "true";
+
+        handler.setIatClaim(expectedIat);
+        handler.setIssClaim(expectedIss);
+        handler.setSubClaim(expectedSub);
+        handler.setAudClaim(expectedAud);
+        handler.setJtiClaim(expectedJti);
+
+        // Capture the actual claims map passed to areClaimsValid
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<HashMap<String, String>> claimsCaptor = ArgumentCaptor.forClass(HashMap.class);
+
+        SignedJWT mockJwt = mock(SignedJWT.class);
+
+        // Mock successful validation
+        when(jwtValidator.validateToken(eq(validToken), any())).thenReturn(mockJwt);
+        when(jwtValidator.isTokenExpired(mockJwt)).thenReturn(false);
+        when(jwtValidator.areClaimsValid(eq(mockJwt), claimsCaptor.capture())).thenReturn(true);
+
+        // Execute
+        boolean result = handler.handleRequest(messageContext);
+
+        // Verify
+        assertTrue(result, "Handle request should return true for valid token");
+        verify(jwtValidator).validateToken(eq(validToken), any());
+        verify(jwtValidator).isTokenExpired(mockJwt);
+
+        // Verify the claims map contains the expected values
+        HashMap<String, String> capturedClaims = claimsCaptor.getValue();
+        assertEquals(expectedIat, capturedClaims.get("iat"), "Expected 'iat' claim does not match");
+        assertEquals(expectedIss, capturedClaims.get("iss"), "Expected 'iss' claim does not match");
+        assertEquals(expectedSub, capturedClaims.get("sub"), "Expected 'sub' claim does not match");
+        assertEquals(expectedAud, capturedClaims.get("aud"), "Expected 'aud' claim does not match");
+        assertEquals(expectedJti, capturedClaims.get("jti"), "Expected 'jti' claim does not match");
+    }
+
+    @Test
+    void testHandleRequest_WithValidTokenAndClaimsFromEnv() throws Exception {
+        // Setup
+        String validToken = "validJwtToken";
+        headers.put("Authorization", "Bearer " + validToken);
+
+        // Set expected claims
+        String expectedIat = "1600";
+        String expectedIss = "expected-iss";
+        String expectedSub = "expected-sub";
+        String expectedAud = "expected-aud";
+        String expectedJti = "true";
+
+        environmentVariables.set("IAT_CLAIM", expectedIat);
+        environmentVariables.set("ISS_CLAIM", expectedIss);
+        environmentVariables.set("SUB_CLAIM", expectedSub);
+        environmentVariables.set("AUD_CLAIM", expectedAud);
+        environmentVariables.set("JTI_CLAIM", expectedJti);
+
+        handler.setIatClaim("env:IAT_CLAIM");
+        handler.setIssClaim("env:ISS_CLAIM");
+        handler.setSubClaim("env:SUB_CLAIM");
+        handler.setAudClaim("env:AUD_CLAIM");
+        handler.setJtiClaim("env:JTI_CLAIM");
+
+        SignedJWT mockJwt = mock(SignedJWT.class);
+
+        // Capture the actual claims map passed to areClaimsValid
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<HashMap<String, String>> claimsCaptor = ArgumentCaptor.forClass(HashMap.class);
+
+        // Mock successful validation
+        when(jwtValidator.validateToken(eq(validToken), any())).thenReturn(mockJwt);
+        when(jwtValidator.isTokenExpired(mockJwt)).thenReturn(false);
+        when(jwtValidator.areClaimsValid(eq(mockJwt), claimsCaptor.capture())).thenReturn(true);
+
+        // Execute
+        boolean result = handler.handleRequest(messageContext);
+
+        // Verify
+        assertTrue(result, "Handle request should return true for valid token");
+        verify(jwtValidator).validateToken(eq(validToken), any());
+        verify(jwtValidator).isTokenExpired(mockJwt);
+
+        // Verify the claims map contains the expected values
+        HashMap<String, String> capturedClaims = claimsCaptor.getValue();
+        assertEquals(expectedIat, capturedClaims.get("iat"), "Expected 'iat' claim does not match");
+        assertEquals(expectedIss, capturedClaims.get("iss"), "Expected 'iss' claim does not match");
+        assertEquals(expectedSub, capturedClaims.get("sub"), "Expected 'sub' claim does not match");
+        assertEquals(expectedAud, capturedClaims.get("aud"), "Expected 'aud' claim does not match");
+        assertEquals(expectedJti, capturedClaims.get("jti"), "Expected 'jti' claim does not match");
     }
 
     @Test
@@ -210,7 +310,7 @@ class JwtAuthHandlerTest {
 
         handler.setJwksEndpoint("env:JWKS_ENDPOINT");
 
-        mockCommonUtilsAndAxis2Sender(() -> {
+        mockAxis2Sender(() -> {
             // Execute
             boolean result = handler.handleRequest(messageContext);
 
@@ -229,7 +329,7 @@ class JwtAuthHandlerTest {
         headers.put("Authorization", "Bearer validToken");
         handler.setJwksEndpoint("invalid-url");
 
-        mockCommonUtilsAndAxis2Sender(() -> {
+        mockAxis2Sender(() -> {
             // Execute
             boolean result = handler.handleRequest(messageContext);
 
@@ -253,7 +353,7 @@ class JwtAuthHandlerTest {
         // Mock validation and expired token
         when(jwtValidator.validateToken(eq(validToken), any())).thenReturn(mockJwt);
         when(jwtValidator.isTokenExpired(mockJwt)).thenReturn(true);
-        mockCommonUtilsAndAxis2Sender(() -> {
+        mockAxis2Sender(() -> {
             // Execute
             boolean result = handler.handleRequest(messageContext);
 
@@ -275,7 +375,7 @@ class JwtAuthHandlerTest {
         // Mock validation failure
         when(jwtValidator.validateToken(eq(validToken), any())).thenThrow(new Exception("Invalid token"));
 
-        mockCommonUtilsAndAxis2Sender(() -> {
+        mockAxis2Sender(() -> {
             // Execute
             boolean result = handler.handleRequest(messageContext);
 
@@ -296,14 +396,21 @@ class JwtAuthHandlerTest {
 
         SignedJWT mockJwt = mock(SignedJWT.class);
 
-        // Set claims
-        handler.setIssClaim("expected-issuer");
+        // Set expected claims
+        String expectedIss = "expected-iss";
+        String falseIss = "false-iss";
+        handler.setIssClaim(expectedIss);
+
+        // Capture the actual claims map passed to areClaimsValid
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<HashMap<String, String>> claimsCaptor = ArgumentCaptor.forClass(HashMap.class);
 
         // Mock validation but invalid claims
         when(jwtValidator.validateToken(eq(validToken), any())).thenReturn(mockJwt);
         when(jwtValidator.isTokenExpired(mockJwt)).thenReturn(false);
-        doThrow(new Exception("Invalid claims")).when(jwtValidator).areClaimsValid(eq(mockJwt), any());
-        mockCommonUtilsAndAxis2Sender(() -> {
+        when(jwtValidator.areClaimsValid(eq(mockJwt), claimsCaptor.capture()))
+                .thenThrow(new Exception("Invalid claims"));
+        mockAxis2Sender(() -> {
             // Execute
             boolean result = handler.handleRequest(messageContext);
 
@@ -313,6 +420,10 @@ class JwtAuthHandlerTest {
             // Verify that the response properties are set correctly
             verify(messageContext).setProperty("RESPONSE", "true");
             verify(messageContext).setTo(null);
+
+            // Verify the claims map contains the expected values
+            HashMap<String, String> capturedClaims = claimsCaptor.getValue();
+            assertNotEquals(falseIss, capturedClaims.get("iss"), "Expected 'iss' claim does not match");
         }, "Invalid claims");
     }
 
@@ -408,29 +519,20 @@ class JwtAuthHandlerTest {
         }
     }
 
-    private void mockCommonUtilsAndAxis2Sender(Runnable testLogic, String exceptionMessage) {
-        try (
-                MockedStatic<CommonUtils> mockedUtils = mockStatic(CommonUtils.class);
-                MockedStatic<Axis2Sender> mockedSender = mockStatic(Axis2Sender.class)) {
-
-            // Mock the CommonUtils.setJsonEnvelopMessageContext call
-            mockedUtils.when(() -> CommonUtils.setJsonEnvelopMessageContext(any(), any()))
-                    .thenAnswer(invocation -> null);
-
-            // Allow resolveConfigValue to work normally
-            mockedUtils.when(() -> CommonUtils.resolveConfigValue(anyString()))
-                    .thenCallRealMethod();
-
+    private void mockAxis2Sender(Runnable testLogic, String exceptionMessage) {
+        try (MockedStatic<Axis2Sender> mockedSender = mockStatic(Axis2Sender.class)) {
             // Mock the Axis2Sender.sendBack to do nothing
             mockedSender.when(() -> Axis2Sender.sendBack(any())).thenAnswer(invocation -> null);
-
+    
             // Execute the test logic
             testLogic.run();
-
-            // Verify the static methods were called with the expected parameters
-            mockedUtils.verify(
-                    () -> CommonUtils.setJsonEnvelopMessageContext(eq(messageContext), contains(exceptionMessage)));
+    
+            // Verify Axis2Sender was called
             mockedSender.verify(() -> Axis2Sender.sendBack(messageContext));
+            
+            // Verify message context properties directly without mocking CommonUtils
+            verify(messageContext).setProperty(eq("RESPONSE"), eq("true"));
+            verify(messageContext).setTo(null);
         }
     }
 

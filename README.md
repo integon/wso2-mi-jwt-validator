@@ -1,9 +1,32 @@
 # wso2-mi-jwt-validator
-The wso2-mi-jwt-validator is a custom handler and mediator for the WSO2 Micro Integrator. This class can be used to validate JWT tokens against a JWKS endpoint. The class can be used as a custom handler or as a custom mediator. The following example shows how to use the class as a custom handler and mediator.
+The wso2-mi-jwt-validator is a custom handler and mediator for the WSO2 Micro Integrator. This class validates JWT tokens against one or more JWKS endpoints and can be used as either a custom handler or a custom mediator.
 
-The wso2-mi-jwt-validator is available on the Maven Central Repository. You can find the latest version [here](https://s01.oss.sonatype.org/service/local/repositories/releases/content/io/integon/wso2mi/jwt/wso2-mi-jwt-validator/1.3.1).
+Latest version: [1.3.1 on Maven Central Repository](https://s01.oss.sonatype.org/service/local/repositories/releases/content/io/integon/wso2mi/jwt/wso2-mi-jwt-validator/1.3.1)
 
-[TOC]
+## Table of Contents
+- [wso2-mi-jwt-validator](#wso2-mi-jwt-validator)
+  - [Table of Contents](#table-of-contents)
+  - [Setup](#setup)
+    - [With pom.xml](#with-pomxml)
+    - [Without pom.xml](#without-pomxml)
+  - [Usage](#usage)
+    - [Available Properties (Custom Handler)](#available-properties-custom-handler)
+    - [Available Properties (Custom Mediator)](#available-properties-custom-mediator)
+  - [Examples](#examples)
+    - [Engage JWT Handler for MI APIs](#engage-jwt-handler-for-mi-apis)
+      - [Basic JWKS URL Configuration](#basic-jwks-url-configuration)
+      - [Environment Variable Configuration](#environment-variable-configuration)
+      - [With Cache Configuration](#with-cache-configuration)
+      - [With Claim Validation](#with-claim-validation)
+      - [With Claim Validation Using Environment Variables](#with-claim-validation-using-environment-variables)
+      - [Multiple JWKS Endpoints](#multiple-jwks-endpoints)
+    - [Engage JWT Mediator for Micro Integrator](#engage-jwt-mediator-for-micro-integrator)
+      - [Basic Configuration](#basic-configuration)
+      - [With Environment Variables](#with-environment-variables)
+      - [With Cache Configuration](#with-cache-configuration-1)
+      - [With Claim Validation](#with-claim-validation-1)
+      - [Multiple JWKS Endpoints](#multiple-jwks-endpoints-1)
+  - [Enable Debug Logs](#enable-debug-logs)
 
 ## Setup
 
@@ -22,82 +45,74 @@ Add the following dependencies to your pom.xml file:
 </dependency>
 ```
 
-These dependencies are required for the wso2-mi-jwt-validator to work. The wso2-mi-jwt-validator uses the nimbus-jose-jwt library to validate the JWT token.
+The wso2-mi-jwt-validator relies on the nimbus-jose-jwt library for JWT validation.
 
 ### Without pom.xml
-Add the following .jar Files to the MI Folder "/home/wso2carbon/wso2mi-{version}/lib"
-- wso2-mi-jwt-validator-1.3.1.jar (or the latest version)
-- nimbus-jose-jwt-10.0.1.jar (or the latest version)
+Add these JAR files to the MI directory "/home/wso2carbon/wso2mi-{version}/lib":
+- wso2-mi-jwt-validator-1.3.1.jar (or latest version)
+- nimbus-jose-jwt-10.0.1.jar (or latest version)
 
-Both .jar files are available on the Maven Central Repository. You can find the latest version [here](https://s01.oss.sonatype.org/service/local/repositories/releases/content/io/integon/wso2mi/jwt/wso2-mi-jwt-validator/1.3.1/wso2-mi-jwt-validator-1.3.1.jar) and [here](https://mvnrepository.com/artifact/com.nimbusds/nimbus-jose-jwt).
+Download links:
+- [wso2-mi-jwt-validator-1.3.1.jar](https://s01.oss.sonatype.org/service/local/repositories/releases/content/io/integon/wso2mi/jwt/wso2-mi-jwt-validator/1.3.1/wso2-mi-jwt-validator-1.3.1.jar)
+- [nimbus-jose-jwt](https://mvnrepository.com/artifact/com.nimbusds/nimbus-jose-jwt)
 
 ## Usage
+
 ### Available Properties (Custom Handler)
-| Parameter Name  | Description                                                  | How to refrence                                              |
-| --------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| jwtHeader       | The name of the header that contains the JWT Token.          | ```<property name="jwtHeader" value="Authorization"/>```     |
-| iatClaim        | The value in seconds will be used to test if the jwt token is not older than the provided value. | ```<property name="iatClaim" value="1800"/>```<br>```<property name="iatClaim" value=""/>``` |
-| issClaim        | The regex value of the iss claim. Multiple iss can be specified with a regex like this `^(myiss1|myiss2|myiss3)$`| ```<property name="issClaim" value="issuer"/>```<br>```<property name="issClaim" value=""/>``` |
-| subClaim        | The value of the sub claim that is expected to be present in the JWT Token. | ```<property name="subClaim" value="subject"/>```<br>```<property name="subClaim" value=""/>``` |
-| audClaim        | The value of the aud claim that is expected to be present in the JWT Token. | ```<property name="audClaim" value="audience"/>```<br>```<property name="audClaim" value=""/>``` |
-| jtiClaim        | If the jti claim set to "enabled", the jti claim will be checked against a cache and will be denied if the same Token has already been used. | ```<property name="jtiClaim" value="enabled"/>```            |
-| jwksEndpoint    | The full URL of the JWKS Endpoint or the name of an environment variable containing this URL (e.g., https://example.com/.well-known/jwks.json or env:JWKS_URL). Multiple endpoints are possible with a comma-separated list. | ```<property name="jwksEndpoint" value="https://apim.ch/oauth2/jwks"/>```<br>```<property name="jwksEndpoint" value="env:JWKS_ENDPOINT"/>``` |
-| jwksTimeout     | Timeout in seconds for JWKS Endpoint caching. Can be specified as a direct value or an environment variable reference using env: prefix. | ```<property name="jwksTimeout" value="30"/>```<br>```<property name="jwksTimeout" value="env:JWKS_TIMEOUT"/>``` |
-| jwksRefreshTime | Time in seconds after which the JWKS Endpoint is refreshed. Can be specified as a direct value or an environment variable reference using env: prefix. | ```<property name="jwksRefreshTime" value="15"/>```<br/>```<property name="jwksRefreshTime" value="env:JWKS_REFRESH_TIME"/>``` |
-| forwardToken    | If set to 'true' the decoded JWT will be set to the message context property 'X-JWT' in json. | ```<property name="forwardToken" value="true"/>```           |
 
+| Parameter Name  | Description                                                  | Examples                                              |
+| --------------- | ------------------------------------------------------------ | ----------------------------------------------------- |
+| jwtHeader       | Header name containing the JWT Token. | `<property name="jwtHeader" value="Authorization"/>` <br> `<property name="jwtHeader" value="env:JWT_HEADER"/>` |
+| iatClaim        | Maximum token age in seconds. | `<property name="iatClaim" value="1800"/>` <br> `<property name="iatClaim" value="env:IAT_CLAIM"/>` <br> `<property name="iatClaim" value=""/>` |
+| issClaim        | Regex for issuer claim. Multiple values: `^(myiss1\|myiss2\|myiss3)$` | `<property name="issClaim" value="issuer"/>` <br> `<property name="issClaim" value="env:ISS_CLAIM"/>` <br> `<property name="issClaim" value=""/>` |
+| subClaim        | Expected subject claim. | `<property name="subClaim" value="subject"/>` <br> `<property name="subClaim" value="env:SUB_CLAIM"/>` <br> `<property name="subClaim" value=""/>` |
+| audClaim        | Expected audience claim. | `<property name="audClaim" value="audience"/>` <br> `<property name="audClaim" value="env:AUD_CLAIM"/>` <br> `<property name="audClaim" value=""/>` |
+| jtiClaim        | Set to "enabled" to verify token uniqueness using cache. | `<property name="jtiClaim" value="enabled"/>` <br> `<property name="jtiClaim" value="env:JTI_CLAIM"/>` |
+| jwksEndpoint    | JWKS endpoint URL(s) or environment variable. Multiple endpoints use comma separation. | `<property name="jwksEndpoint" value="https://example.com/oauth2/jwks"/>` <br> `<property name="jwksEndpoint" value="env:JWKS_ENDPOINT"/>` |
+| jwksTimeout     | Timeout in seconds for JWKS endpoint caching. | `<property name="jwksTimeout" value="30"/>` <br> `<property name="jwksTimeout" value="env:JWKS_TIMEOUT"/>` |
+| jwksRefreshTime | Time in seconds after which the JWKS endpoint is refreshed. | `<property name="jwksRefreshTime" value="15"/>` <br> `<property name="jwksRefreshTime" value="env:JWKS_REFRESH_TIME"/>` |
+| forwardToken    | If 'true', decoded JWT payload is set as 'X-JWT' property. | `<property name="forwardToken" value="true"/>` <br> `<property name="forwardToken" value="env:FORWARD_TOKEN"/>` |
 
-The following Parameters can be left empty:
-- jwksEndpoint (IF jwksEnvVariable is set)
-- jwksEnvVariable (IF jwksEndpoint is set)
-- iatClaim (Claim will not be checked)
-- issClaim (Claim will not be checked)
-- subClaim (Claim will not be checked)
-- audClaim (Claim will not be checked)
-- jtiClaim (Claim will not be checked)
-- jwksTimeout (default will be set: 6000)
-- jwksRefreshTime (default will be set: 3000)
+**Note:** All properties can be specified directly or via environment variables using the `env:` prefix.
+
+**Optional parameters:**
+- All claim checks (iatClaim, issClaim, subClaim, audClaim, jtiClaim) - claims not specified will not be checked
+- jwksTimeout (default: 6000)
+- jwksRefreshTime (default: 3000)
+- forwardToken (default: false)
 
 ### Available Properties (Custom Mediator)
-| Parameter Name  | Description                                                  | How to refrence                                              |
-| --------------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| jwtToken        | The jwt token that is to be validated.                       | ```<property name="jwtToken" expression="$trp:Authorization"/>```<br>```<property name="jwtToken" expression="$ctx:jwt"/>``` |
-| iatClaim        | The value in seconds will be used to test if the jwt token is not older than the provided value. | ```<property name="iatClaim" value="1800"/>```<br>```<property name="iatClaim" value=""/>``` |
-| issClaim        | The regex value of the iss claim. Multiple iss can be specified with a regex like this `^(myiss1|myiss2|myiss3)$` | ```<property name="issClaim" value="issuer"/>```<br>```<property name="issClaim" value=""/>``` |
-| subClaim        | The value of the sub claim that is expected to be present in the JWT Token. | ```<property name="subClaim" value="subject"/>```<br>```<property name="subClaim" value=""/>``` |
-| audClaim        | The value of the aud claim that is expected to be present in the JWT Token. | ```<property name="audClaim" value="audience"/>```<br>```<property name="audClaim" value=""/>``` |
-| jtiClaim        | If the jti claim set to "enabled", the jti claim will be checked against a cache and will be denied if the same Token has already been used. | ```<property name="jtiClaim" value="enabled"/>```            |
-| jwksEndpoint    | The full URL of the JWKS Endpoint or the name of an environment variable containing this URL (e.g., https://example.com/.well-known/jwks.json or env:JWKS_URL). Multiple endpoints are possible with a comma-separated list. | ```<property name="jwksEndpoint" value="https://apim.ch/oauth2/jwks"/>```<br>```<property name="jwksEndpoint" value="env:JWKS_ENDPOINT"/>``` |
-| jwksTimeout     | Timeout in seconds for JWKS Endpoint caching. Can be specified as a direct value or an environment variable reference using env: prefix. | ```<property name="jwksTimeout" value="30"/>```<br>```<property name="jwksTimeout" value="env:JWKS_TIMEOUT"/>``` |
-| jwksRefreshTime | Time in seconds after which the JWKS Endpoint is refreshed. Can be specified as a direct value or an environment variable reference using env: prefix. | ```<property name="jwksRefreshTime" value="15"/>```<br/>```<property name="jwksRefreshTime" value="env:JWKS_REFRESH_TIME"/>``` |
-| forwardToken    | If set to 'true' the decoded JWT will be set to the message context property 'X-JWT' in json. | ```<property name="forwardToken" value="true"/>```           |
-| respond         | If set to 'true' the mediator will respond without triggering the faultSequence. | ```<property name="respond" value="true"/>```                |
 
-The following Parameters can be left empty:
-- jwksEndpoint (IF jwksEnvVariable is set)
-- jwksEnvVariable (IF jwksEndpoint is set)
-- iatClaim (Claim will not be checked)
-- issClaim (Claim will not be checked)
-- subClaim (Claim will not be checked)
-- audClaim (Claim will not be checked)
-- jtiClaim (Claim will not be checked)
-- jwksTimeout (default will be set: 6000)
-- jwksRefreshTime (default will be set: 3000)
+| Parameter Name  | Description                                                  | Examples                                              |
+| --------------- | ------------------------------------------------------------ | ----------------------------------------------------- |
+| jwtToken        | JWT token to validate. | `<property name="jwtToken" expression="$trp:Authorization"/>` <br> `<property name="jwtToken" expression="$ctx:jwt"/>` |
+| iatClaim        | Maximum token age in seconds. | `<property name="iatClaim" value="1800"/>` <br> `<property name="iatClaim" value="env:IAT_CLAIM"/>` <br> `<property name="iatClaim" value=""/>` |
+| issClaim        | Regex for issuer claim. Multiple values: `^(myiss1\|myiss2\|myiss3)$` | `<property name="issClaim" value="issuer"/>` <br> `<property name="issClaim" value="env:ISS_CLAIM"/>` <br> `<property name="issClaim" value=""/>` |
+| subClaim        | Expected subject claim. | `<property name="subClaim" value="subject"/>` <br> `<property name="subClaim" value="env:SUB_CLAIM"/>` <br> `<property name="subClaim" value=""/>` |
+| audClaim        | Expected audience claim. | `<property name="audClaim" value="audience"/>` <br> `<property name="audClaim" value="env:AUD_CLAIM"/>` <br> `<property name="audClaim" value=""/>` |
+| jtiClaim        | Set to "enabled" to verify token uniqueness using cache. | `<property name="jtiClaim" value="enabled"/>` <br> `<property name="jtiClaim" value="env:JTI_CLAIM"/>` |
+| jwksEndpoint    | JWKS endpoint URL(s) or environment variable. Multiple endpoints use comma separation. | `<property name="jwksEndpoint" value="https://example.com/oauth2/jwks"/>` <br> `<property name="jwksEndpoint" value="env:JWKS_ENDPOINT"/>` |
+| jwksTimeout     | Timeout in seconds for JWKS endpoint caching. | `<property name="jwksTimeout" value="30"/>` <br> `<property name="jwksTimeout" value="env:JWKS_TIMEOUT"/>` |
+| jwksRefreshTime | Time in seconds after which the JWKS endpoint is refreshed. | `<property name="jwksRefreshTime" value="15"/>` <br> `<property name="jwksRefreshTime" value="env:JWKS_REFRESH_TIME"/>` |
+| forwardToken    | If 'true', decoded JWT payload is set as 'X-JWT' property. | `<property name="forwardToken" value="true"/>` <br> `<property name="forwardToken" value="env:FORWARD_TOKEN"/>` |
+| respond         | If 'true', mediator responds without triggering faultSequence. | `<property name="respond" value="true"/>` <br> `<property name="respond" value="env:RESPOND"/>` |
+
+**Note:** All properties can be specified directly or via environment variables using the `env:` prefix.
+
+**Optional parameters:**
+- All claim checks (iatClaim, issClaim, subClaim, audClaim, jtiClaim) - claims not specified will not be checked
+- jwksTimeout (default: 6000)
+- jwksRefreshTime (default: 3000)
 - forwardToken (default: false)
 - respond (default: false)
 
-### Examples
-#### Engage JWT Handler for MI APIs
-The following examples show how to engage the JWT Handler for MI APIs. Use Cases:
-- JWKS as a URL
-- JWKS as an Environment Variable
-- With JWKS Timeout and JWKS Refresh Time
-- With Claim Checks
-- Multiple JWKS Endpoints
+## Examples
 
-##### JKWS as a URL
-```
-<api context="/jwtHealth" name="jwt-health-api" xmlns="http://ws.apache.org/ns/synapse" trace="enable" statistics="enable">
+### Engage JWT Handler for MI APIs
+
+#### Basic JWKS URL Configuration
+```xml
+<api context="/jwtHealth" name="jwt-health-api" xmlns="http://ws.apache.org/ns/synapse">
       <resource methods="GET" uri-template="/">
             ...
       </resource>
@@ -109,23 +124,25 @@ The following examples show how to engage the JWT Handler for MI APIs. Use Cases
       </handlers>
 </api>
 ```
-##### JKWS as an Environment Variable
-```
-<api context="/jwtHealth" name="jwt-health-api" xmlns="http://ws.apache.org/ns/synapse" trace="enable" statistics="enable">
+
+#### Environment Variable Configuration
+```xml
+<api context="/jwtHealth" name="jwt-health-api" xmlns="http://ws.apache.org/ns/synapse">
       <resource methods="GET" uri-template="/">
             ...
       </resource>
       <handlers>
             <handler class="io.integon.JwtAuthHandler">
-                  <property name="jwtHeader" value="Authorization"/>
+                  <property name="jwtHeader" value="env:JWT_HEADER"/>
                   <property name="jwksEndpoint" value="env:JWKS_ENDPOINT"/>
             </handler>
       </handlers>
 </api>
 ```
-##### With JWKS Timeout and JWKS Refresh Time
-```
-<api context="/jwtHealth" name="jwt-health-api" xmlns="http://ws.apache.org/ns/synapse" trace="enable" statistics="enable">
+
+#### With Cache Configuration
+```xml
+<api context="/jwtHealth" name="jwt-health-api" xmlns="http://ws.apache.org/ns/synapse">
       <resource methods="GET" uri-template="/">
             ...
       </resource>
@@ -139,9 +156,10 @@ The following examples show how to engage the JWT Handler for MI APIs. Use Cases
       </handlers>
 </api>
 ```
-##### With Claim Checks
-``` 
-<api context="/jwtHealth" name="jwt-health-api" xmlns="http://ws.apache.org/ns/synapse" trace="enable" statistics="enable">
+
+#### With Claim Validation
+```xml
+<api context="/jwtHealth" name="jwt-health-api" xmlns="http://ws.apache.org/ns/synapse">
       <resource methods="GET" uri-template="/">
             ...
       </resource>
@@ -159,10 +177,29 @@ The following examples show how to engage the JWT Handler for MI APIs. Use Cases
 </api>
 ```
 
-##### Multiple JWKS Endpoints
+#### With Claim Validation Using Environment Variables
+```xml
+<api context="/jwtHealth" name="jwt-health-api" xmlns="http://ws.apache.org/ns/synapse">
+      <resource methods="GET" uri-template="/">
+            ...
+      </resource>
+      <handlers>
+            <handler class="io.integon.JwtAuthHandler">
+                  <property name="jwtHeader" value="Authorization"/>
+                  <property name="jwksEndpoint" value="https://apim.ch/oauth2/jwks"/>
+                  <property name="iatClaim" value="env:IAT_MAX_AGE"/>
+                  <property name="issClaim" value="env:EXPECTED_ISSUER"/>
+                  <property name="subClaim" value="env:EXPECTED_SUBJECT"/>
+                  <property name="audClaim" value="env:EXPECTED_AUDIENCE"/>
+                  <property name="jtiClaim" value="env:JTI_CHECK"/>
+            </handler>
+      </handlers>
+</api>
+```
 
-``` 
-<api context="/jwtHealth" name="jwt-health-api" xmlns="http://ws.apache.org/ns/synapse" trace="enable" statistics="enable">
+#### Multiple JWKS Endpoints
+```xml
+<api context="/jwtHealth" name="jwt-health-api" xmlns="http://ws.apache.org/ns/synapse">
       <resource methods="GET" uri-template="/">
             ...
       </resource>
@@ -175,97 +212,87 @@ The following examples show how to engage the JWT Handler for MI APIs. Use Cases
 </api>
 ```
 
-#### Engage JWT Mediator for Micro Integrator
+### Engage JWT Mediator for Micro Integrator
 
-The following examples show how to engage the JWT Handler for MI APIs. Use Cases:
-- JWKS as a URL
-- JWKS as an Environment Variable
-- JWKS with Timeout and Refresh Time
-- With Claim Checks
-- Multiple JWKS Endpoints
-##### JWKS as a URL
-```
+#### Basic Configuration
+```xml
 <proxy xmlns="http://ws.apache.org/ns/synapse" name="jwt-auth-mi" transports="http https" startOnLoad="true">
-	<description>JWT Mediator Test Proxy</description>
-	<target>
-		<inSequence>
+      <description>JWT Mediator Test Proxy</description>
+      <target>
+            <inSequence>
             <propertyGroup name="jwt-auth-mi">
                   <property name="jwtToken" expression="$trp:Authorization"/>
                   <property name="jwksEndpoint" value="https://apim-dev.ch/oauth2/jwks"/>
             </propertyGroup>
             <class name="io.integon.JwtAuthMediator"/>
-            ....
-		</inSequence>
-		<faultSequence>
-			<log level="custom" category="ERROR">
-				<property name="jwt-auth-mi" value="faultSequence" />
-				<property name="ERROR_CODE" expression="$ctx:ERROR_CODE"/>
-				<property name="ERROR_MESSAGE" expression="$ctx:ERROR_MESSAGE"/>
-			</log>
-                  <property name="HTTP_SC" expression="$ctx:ERROR_CODE" scope="axis2"/>
-			<respond/>	
-		</faultSequence>
-	</target>
+            <!-- Your sequence continues here -->
+            </inSequence>
+            <faultSequence>
+                  <log level="custom" category="ERROR">
+                        <property name="jwt-auth-mi" value="faultSequence" />
+                        <property name="ERROR_CODE" expression="$ctx:ERROR_CODE"/>
+                        <property name="ERROR_MESSAGE" expression="$ctx:ERROR_MESSAGE"/>
+                  </log>
+            <property name="HTTP_SC" expression="$ctx:ERROR_CODE" scope="axis2"/>
+                  <respond/>	
+            </faultSequence>
+      </target>
 </proxy>
 ```
-##### JWKS as an Environment Variable
-```
+
+#### With Environment Variables
+```xml
 <proxy xmlns="http://ws.apache.org/ns/synapse" name="jwt-auth-mi" transports="http https" startOnLoad="true">
-	<description>JWT Mediator Test Proxy</description>
-	<target>
-		<inSequence>
+      <description>JWT Mediator Test Proxy</description>
+      <target>
+            <inSequence>
             <propertyGroup name="jwt-auth-mi">
                   <property name="jwtToken" expression="$trp:Authorization"/>
                   <property name="jwksEndpoint" value="env:JWKS_ENDPOINT"/>
+                  <property name="iatClaim" value="env:IAT_MAX_AGE" />
+                  <property name="issClaim" value="env:EXPECTED_ISSUER" />
+                  <property name="subClaim" value="env:EXPECTED_SUBJECT" />
+                  <property name="audClaim" value="env:EXPECTED_AUDIENCE" />
+                  <property name="jtiClaim" value="env:JTI_CHECK" />
             </propertyGroup>
             <class name="io.integon.JwtAuthMediator"/>
-            ....
-		</inSequence>
-		<faultSequence>
-			<log level="custom" category="ERROR">
-				<property name="jwt-auth-mi" value="faultSequence" />
-				<property name="ERROR_CODE" expression="$ctx:ERROR_CODE"/>
-				<property name="ERROR_MESSAGE" expression="$ctx:ERROR_MESSAGE"/>
-			</log>
-                  <property name="HTTP_SC" expression="$ctx:ERROR_CODE" scope="axis2"/>
-			<respond/>	
-		</faultSequence>
-	</target>
+            <!-- Your sequence continues here -->
+            </inSequence>
+            <faultSequence>
+                  <!-- Error handling -->
+            </faultSequence>
+      </target>
 </proxy>
 ```
-##### JWKS with Timeout and Refresh Time
-```
+
+#### With Cache Configuration
+```xml
 <proxy xmlns="http://ws.apache.org/ns/synapse" name="jwt-auth-mi" transports="http https" startOnLoad="true">
-	<description>JWT Mediator Test Proxy</description>
-	<target>
-		<inSequence>
+      <description>JWT Mediator Test Proxy</description>
+      <target>
+            <inSequence>
             <propertyGroup name="jwt-auth-mi">
                   <property name="jwtToken" expression="$trp:Authorization"/>
                   <property name="jwksEndpoint" value="env:JWKS_ENDPOINT"/>
                   <property name="jwksTimeout" value="3000"/>
-		      <property name="jwksRefreshTime" value="1000"/>
+                  <property name="jwksRefreshTime" value="1000"/>
             </propertyGroup>
             <class name="io.integon.JwtAuthMediator"/>
-            ....
-		</inSequence>
-		<faultSequence>
-			<log level="custom" category="ERROR">
-				<property name="jwt-auth-mi" value="faultSequence" />
-				<property name="ERROR_CODE" expression="$ctx:ERROR_CODE"/>
-				<property name="ERROR_MESSAGE" expression="$ctx:ERROR_MESSAGE"/>
-			</log>
-                  <property name="HTTP_SC" expression="$ctx:ERROR_CODE" scope="axis2"/>
-			<respond/>	
-		</faultSequence>
-	</target>
+            <!-- Your sequence continues here -->
+            </inSequence>
+            <faultSequence>
+                  <!-- Error handling -->
+            </faultSequence>
+      </target>
 </proxy>
 ```
-##### With Claim Checks
-```
+
+#### With Claim Validation
+```xml
 <proxy xmlns="http://ws.apache.org/ns/synapse" name="jwt-auth-mi" transports="http https" startOnLoad="true">
-	<description>JWT Mediator Test Proxy</description>
-	<target>
-		<inSequence>
+      <description>JWT Mediator Test Proxy</description>
+      <target>
+            <inSequence>
             <propertyGroup name="jwt-auth-mi">
                   <property name="jwtToken" expression="$trp:Authorization"/>
                   <property name="iatClaim" expression="$trp:test" />
@@ -276,52 +303,40 @@ The following examples show how to engage the JWT Handler for MI APIs. Use Cases
                   <property name="jwksEndpoint" value="env:JWKS_ENDPOINT"/>
             </propertyGroup>
             <class name="io.integon.JwtAuthMediator"/>
-            ....
-		</inSequence>
-		<faultSequence>
-			<log level="custom" category="ERROR">
-				<property name="jwt-auth-mi" value="faultSequence" />
-				<property name="ERROR_CODE" expression="$ctx:ERROR_CODE"/>
-				<property name="ERROR_MESSAGE" expression="$ctx:ERROR_MESSAGE"/>
-			</log>
-                  <property name="HTTP_SC" expression="$ctx:ERROR_CODE" scope="axis2"/>
-			<respond/>	
-		</faultSequence>
-	</target>
+            <!-- Your sequence continues here -->
+            </inSequence>
+            <faultSequence>
+                  <!-- Error handling -->
+            </faultSequence>
+      </target>
 </proxy>
 ```
-##### Multiple JWKS Endpoints
 
-```
+#### Multiple JWKS Endpoints
+```xml
 <proxy xmlns="http://ws.apache.org/ns/synapse" name="jwt-auth-mi" transports="http https" startOnLoad="true">
-	<description>JWT Mediator Test Proxy</description>
-	<target>
-		<inSequence>
+      <description>JWT Mediator Test Proxy</description>
+      <target>
+            <inSequence>
             <propertyGroup name="jwt-auth-mi">
                   <property name="jwtToken" expression="$trp:Authorization"/>
                   <property name="jwksEndpoint" value="https://apim-dev.ch/oauth2/jwks,https://apim-test.ch/oauth2/jwks"/>
             </propertyGroup>
             <class name="io.integon.JwtAuthMediator"/>
-            ....
-		</inSequence>
-		<faultSequence>
-			<log level="custom" category="ERROR">
-				<property name="jwt-auth-mi" value="faultSequence" />
-				<property name="ERROR_CODE" expression="$ctx:ERROR_CODE"/>
-				<property name="ERROR_MESSAGE" expression="$ctx:ERROR_MESSAGE"/>
-			</log>
-                  <property name="HTTP_SC" expression="$ctx:ERROR_CODE" scope="axis2"/>
-			<respond/>	
-		</faultSequence>
-	</target>
+            <!-- Your sequence continues here -->
+            </inSequence>
+            <faultSequence>
+                  <!-- Error handling -->
+            </faultSequence>
+      </target>
 </proxy>
 ```
 
 ## Enable Debug Logs
 
-In order to debug the JWT Mediator and Handler the following snippets need to be added to the "../mi-home/conf/log4j2.properties" file:
+To enable debugging for the JWT validator, add the following to "../mi-home/conf/log4j2.properties":
 
-```
+```properties
 logger.JwtAuthMediator.name = io.integon.JwtAuthMediator
 logger.JwtAuthMediator.level = DEBUG
 
@@ -329,9 +344,8 @@ logger.JwtAuthHandler.name = io.integon.JwtAuthHandler
 logger.JwtAuthHandler.level = DEBUG
 ```
 
-Furthermore, the "JwtAuthMediator" and "JwtAuthHandler" need to be added to the list of loggers:
+Then add these loggers to the list of loggers:
 
-```
+```properties
 loggers = ..., ..., ..., JwtAuthMediator, JwtAuthHandler
 ```
-

@@ -45,6 +45,12 @@ public class JwtAuthMediator extends AbstractMediator {
     // Static counter for instances
     private static AtomicLong instanceCount = new AtomicLong();
 
+    private HashMap<String, String> claimsMap = new HashMap<>();
+
+    // initialization flag
+    private boolean initialized = false;
+    private boolean allValuesAreNull = true;
+
     // Constructor
     public JwtAuthMediator() {
         synchronized (JwtAuthMediator.class) {
@@ -73,7 +79,8 @@ public class JwtAuthMediator extends AbstractMediator {
             log.debug("JWTValidator: " + validator);
             CACHED_TIME_VALIDATOR = System.currentTimeMillis();
         }
-        String resolvedJwksEndpoint = CommonUtils.resolveConfigValue((String) messageContext.getProperty(JWKS_ENDPOINT_PARAMETER_NAME));
+        String resolvedJwksEndpoint = CommonUtils
+                .resolveConfigValue((String) messageContext.getProperty(JWKS_ENDPOINT_PARAMETER_NAME));
         if (resolvedJwksEndpoint == null) {
             handleException("JWKS endpoint not found", messageContext);
             return false;
@@ -94,9 +101,11 @@ public class JwtAuthMediator extends AbstractMediator {
                 return false;
             }
         }
-         
+
         // retrieve JWKS_TIMEOUT & JWKS_REFRESH_TIME from the message context
-        validator.setCacheTimeouts(CommonUtils.resolveConfigValue((String) messageContext.getProperty(JWKS_TIMEOUT_PARAMETER_NAME)), CommonUtils.resolveConfigValue((String) messageContext.getProperty(JWKS_REFRESH_TIME_PARAMETER_NAME)));
+        validator.setCacheTimeouts(
+                CommonUtils.resolveConfigValue((String) messageContext.getProperty(JWKS_TIMEOUT_PARAMETER_NAME)),
+                CommonUtils.resolveConfigValue((String) messageContext.getProperty(JWKS_REFRESH_TIME_PARAMETER_NAME)));
 
         String jwtToken = (String) messageContext.getProperty(JWT_TOKEN_PARAMETER_NAME);
         // Extract the token from the Authorization header
@@ -143,45 +152,27 @@ public class JwtAuthMediator extends AbstractMediator {
             return false;
         }
 
-        // retrieve the sub claim from the message context
-        String iatClaim = (String) messageContext.getProperty(IAT_CLAIM_PARAMETER_NAME);
-        if (iatClaim != null && iatClaim.isEmpty()) {
-            iatClaim = null;
-        }
-        String issClaim = (String) messageContext.getProperty(ISS_CLAIM_PARAMETER_NAME);
-        if (issClaim != null && issClaim.isEmpty()) {
-            issClaim = null;
-        }
-        String subClaim = (String) messageContext.getProperty(SUB_CLAIM_PARAMETER_NAME);
-        if (subClaim != null && subClaim.isEmpty()) {
-            subClaim = null;
-        }
-        String audClaim = (String) messageContext.getProperty(AUD_CLAIM_PARAMETER_NAME);
-        if (audClaim != null && audClaim.isEmpty()) {
-            audClaim = null;
-        }
-        String jtiClaim = (String) messageContext.getProperty(JTI_CLAIM_PARAMETER_NAME);
-        if (jtiClaim != null && jtiClaim.isEmpty()) {
-            jtiClaim = null;
-        }
-        HashMap<String, String> claims = new HashMap<String, String>();
-        claims.put("iat", iatClaim);
-        claims.put("iss", issClaim);
-        claims.put("sub", subClaim);
-        claims.put("aud", audClaim);
-        claims.put("jti", jtiClaim);
-        log.debug("JWT claims Map set: " + claims);
-        // check if all values are null
-        boolean allValuesAreNull = true;
-        for (String value : claims.values()) {
-            if (value != null) {
-                allValuesAreNull = false;
-                break;
+        // Check if ClaimsMap is initialized
+        if (!initialized) {
+            claimsMap = CommonUtils.initializeClaimsMap((String) messageContext.getProperty(IAT_CLAIM_PARAMETER_NAME),
+                    (String) messageContext.getProperty(ISS_CLAIM_PARAMETER_NAME),
+                    (String) messageContext.getProperty(SUB_CLAIM_PARAMETER_NAME),
+                    (String) messageContext.getProperty(AUD_CLAIM_PARAMETER_NAME),
+                    (String) messageContext.getProperty(JTI_CLAIM_PARAMETER_NAME));
+            // Check if all values are null (only during initialization)
+            allValuesAreNull = true; // Reset to true before checking
+            for (String value : claimsMap.values()) {
+                if (value != null) {
+                    allValuesAreNull = false;
+                    break;
+                }
             }
+            initialized = true;
+            log.debug("JWT claims Map initialized: " + claimsMap);
         }
         if (!allValuesAreNull) {
             try {
-                validator.areClaimsValid(parsedJWT, claims);
+                validator.areClaimsValid(parsedJWT, claimsMap);
             } catch (Exception e) {
                 handleException(e.getMessage(), messageContext);
                 return false;

@@ -42,6 +42,12 @@ public class JwtAuthHandler implements Handler {
 
     private JWTValidator validator = null;
 
+    private HashMap<String, String> claimsMap = new HashMap<>();
+
+    // initialization flag
+    private boolean initialized = false;
+    private boolean allValuesAreNull = true;
+
     @Override
     public void addProperty(String s, Object o) {
         // To change body of implemented methods use File | Settings | File Templates.
@@ -98,7 +104,7 @@ public class JwtAuthHandler implements Handler {
             return false;
         }
         // Remove "Bearer " from the token
-        String jwtToken;   
+        String jwtToken;
         try {
             jwtToken = authHeader.substring(7).trim();
         } catch (IndexOutOfBoundsException e) {
@@ -136,7 +142,8 @@ public class JwtAuthHandler implements Handler {
         }
 
         // Set the cache timeouts
-        validator.setCacheTimeouts(CommonUtils.resolveConfigValue(jwksTimeout), CommonUtils.resolveConfigValue(jwksRefreshTime));
+        validator.setCacheTimeouts(CommonUtils.resolveConfigValue(jwksTimeout),
+                CommonUtils.resolveConfigValue(jwksRefreshTime));
 
         // validate the JWT token
         SignedJWT parsedJWT;
@@ -159,39 +166,24 @@ public class JwtAuthHandler implements Handler {
             handleException(e.getMessage(), messageContext);
             return false;
         }
-        // Check if the claims are valid
-        HashMap<String, String> claims = new HashMap<String, String>();
-        if (iatClaim != null && iatClaim.isEmpty()) {
-            iatClaim = null;
-        }
-        claims.put("iat", iatClaim);
-        if (issClaim != null && issClaim.isEmpty()) {
-            issClaim = null;
-        }
-        claims.put("iss", issClaim);
-        if (subClaim != null && subClaim.isEmpty()) {
-            subClaim = null;
-        }
-        claims.put("sub", subClaim);
-        if (audClaim != null && audClaim.isEmpty()) {
-            audClaim = null;
-        }
-        claims.put("aud", audClaim);
-        if (jtiClaim != null && jtiClaim.isEmpty()) {
-            jtiClaim = null;
-        }
-        claims.put("jti", jtiClaim);
-        // check if all values are null
-        boolean allValuesAreNull = true;
-        for (String value : claims.values()) {
-            if (value != null) {
-                allValuesAreNull = false;
-                break;
+        // Check if ClaimsMap is initialized
+        if (!initialized) {
+            claimsMap = CommonUtils.initializeClaimsMap(iatClaim, issClaim, subClaim, audClaim, jtiClaim);
+            // Check if all values are null (only during initialization)
+            allValuesAreNull = true; // Reset to true before checking
+            for (String value : claimsMap.values()) {
+                if (value != null) {
+                    allValuesAreNull = false;
+                    break;
+                }
             }
+            initialized = true;
+            log.debug("JWT claims Map initialized: " + claimsMap);
         }
+        
         if (!allValuesAreNull) {
             try {
-                validator.areClaimsValid(parsedJWT, claims);
+                validator.areClaimsValid(parsedJWT, claimsMap);
             } catch (Exception e) {
                 handleException(e.getMessage(), messageContext);
                 return false;
