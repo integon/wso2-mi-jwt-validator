@@ -28,7 +28,6 @@ public class JwtAuthHandler implements Handler {
 
     private String jwtHeader;
     private String jwksEndpoint;
-    private String jwksEnvVariable;
     private String iatClaim;
     private String issClaim;
     private String subClaim;
@@ -36,19 +35,25 @@ public class JwtAuthHandler implements Handler {
     private String jtiClaim;
     private String jwksTimeout;
     private String jwksRefreshTime;
+    private String forwardToken;
 
-    private long cachedTimeValidator = 0;
-    private long cachedTimeValidatorReset = 86400000; // 24 hours
+    private long CACHED_TIME_VALIDATOR = 0;
+    private long CACHED_TIME_VALIDATOR_RESET = 86400000; // 24 hours
 
     private JWTValidator validator = null;
 
-    private String forwardToken;
+    private HashMap<String, String> claimsMap = new HashMap<>();
+
+    // initialization flag
+    private boolean initialized = false;
+    private boolean allValuesAreNull = true;
 
     @Override
     public void addProperty(String s, Object o) {
         // To change body of implemented methods use File | Settings | File Templates.
     }
 
+    @SuppressWarnings("rawtypes")
     @Override
     public Map getProperties() {
         return null; // To change body of implemented methods use File | Settings | File Templates.
@@ -67,9 +72,9 @@ public class JwtAuthHandler implements Handler {
     @Override
     public boolean handleRequest(MessageContext messageContext) {
         // initialize the JWTValidator
-        if (validator == null || cachedTimeValidator + cachedTimeValidatorReset < System.currentTimeMillis()) {
+        if (validator == null || CACHED_TIME_VALIDATOR + CACHED_TIME_VALIDATOR_RESET < System.currentTimeMillis()) {
             validator = new JWTValidator();
-            cachedTimeValidator = System.currentTimeMillis();
+            CACHED_TIME_VALIDATOR = System.currentTimeMillis();
             log.debug("JWTValidator initialized: " + validator);
         }
 
@@ -80,9 +85,10 @@ public class JwtAuthHandler implements Handler {
 
         // retrieve the JWT token from transport headers
         String authHeader = null;
-        if (headers != null && headers instanceof Map) {
+        if (headers instanceof Map) {
+            @SuppressWarnings("rawtypes")
             Map headersMap = (Map) headers;
-            authHeader = (String) headersMap.get(jwtHeader);
+            authHeader = (String) headersMap.get(CommonUtils.resolveConfigValue(jwtHeader));
         }
 
         // Check if the token is null or empty
@@ -98,36 +104,29 @@ public class JwtAuthHandler implements Handler {
             return false;
         }
         // Remove "Bearer " from the token
-        String jwtToken;   
+        String jwtToken;
         try {
-            jwtToken = authHeader.substring(7);
+            jwtToken = authHeader.substring(7).trim();
         } catch (IndexOutOfBoundsException e) {
             log.debug("Invalid JWT token format: " + authHeader);
             handleException("Invalid Authorization header format", messageContext);
             return false;
         }
-        
-        if (jwtToken == null || jwtToken.isEmpty()) {
+
+        if (jwtToken.isEmpty()) {
             log.debug("JWT token not found in the message");
             handleException("JWT token not found in the message", messageContext);
             return false;
         }
 
-        // If jwksEnvVariable is set, check if the environment variable contains a valid
-        // URL
-        if (jwksEnvVariable != null && System.getenv().get(jwksEnvVariable) != null
-                && CommonUtils.containsUrl(System.getenv().get(jwksEnvVariable))) {
-            jwksEndpoint = System.getenv().get(jwksEnvVariable);
-        } else {
-            // Check if the JWKS endpoint is empty
-            if (jwksEndpoint == null || jwksEndpoint.isEmpty()) {
-                handleException("JWKS endpoint not found", messageContext);
-                return false;
-            }
+        String resolvedJwksEndpoint = CommonUtils.resolveConfigValue(jwksEndpoint);
+        if (resolvedJwksEndpoint == null) {
+            handleException("JWKS endpoint not found", messageContext);
+            return false;
         }
 
         ArrayList<URL> jwksUrls = new ArrayList<>();
-        String[] jwksUrlsSplit = jwksEndpoint.split(",");
+        String[] jwksUrlsSplit = resolvedJwksEndpoint.split(",");
         for (String jkwsUrlString : jwksUrlsSplit) {
             try {
                 // Trim any spaces and attempt to create a URL
@@ -143,7 +142,8 @@ public class JwtAuthHandler implements Handler {
         }
 
         // Set the cache timeouts
-        validator.setCacheTimeouts(jwksTimeout, jwksRefreshTime);
+        validator.setCacheTimeouts(CommonUtils.resolveConfigValue(jwksTimeout),
+                CommonUtils.resolveConfigValue(jwksRefreshTime));
 
         // validate the JWT token
         SignedJWT parsedJWT;
@@ -166,46 +166,31 @@ public class JwtAuthHandler implements Handler {
             handleException(e.getMessage(), messageContext);
             return false;
         }
-        // Check if the claims are valid
-        HashMap<String, String> claims = new HashMap<String, String>();
-        if (iatClaim != null && iatClaim.isEmpty()) {
-            iatClaim = null;
-        }
-        claims.put("iat", iatClaim);
-        if (issClaim != null && issClaim.isEmpty()) {
-            issClaim = null;
-        }
-        claims.put("iss", issClaim);
-        if (subClaim != null && subClaim.isEmpty()) {
-            subClaim = null;
-        }
-        claims.put("sub", subClaim);
-        if (audClaim != null && audClaim.isEmpty()) {
-            audClaim = null;
-        }
-        claims.put("aud", audClaim);
-        if (jtiClaim != null && jtiClaim.isEmpty()) {
-            jtiClaim = null;
-        }
-        claims.put("jti", jtiClaim);
-        // check if all values are null
-        boolean allValuesAreNull = true;
-        for (String value : claims.values()) {
-            if (value != null) {
-                allValuesAreNull = false;
-                break;
+        // Check if ClaimsMap is initialized
+        if (!initialized) {
+            claimsMap = CommonUtils.initializeClaimsMap(iatClaim, issClaim, subClaim, audClaim, jtiClaim);
+            // Check if all values are null (only during initialization)
+            allValuesAreNull = true; // Reset to true before checking
+            for (String value : claimsMap.values()) {
+                if (value != null) {
+                    allValuesAreNull = false;
+                    break;
+                }
             }
+            initialized = true;
+            log.debug("JWT claims Map initialized: " + claimsMap);
         }
+        
         if (!allValuesAreNull) {
             try {
-                validator.areClaimsValid(parsedJWT, claims);
+                validator.areClaimsValid(parsedJWT, claimsMap);
             } catch (Exception e) {
                 handleException(e.getMessage(), messageContext);
                 return false;
             }
         }
-
-        if (forwardToken != null && forwardToken.equals("true")) {
+        String resolvedForwardToken = CommonUtils.resolveConfigValue(forwardToken);
+        if (resolvedForwardToken != null && resolvedForwardToken.equals("true")) {
             log.debug("Set JWT token in the message context");
             // Decode the JWT payload and add it to the transport headers
             String decodedToken = new String(Base64.getDecoder().decode(jwtToken.split("\\.")[1]));
@@ -247,6 +232,7 @@ public class JwtAuthHandler implements Handler {
         Object headers = axis2MessageContext.getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
 
         // Clear the transport headers
+        @SuppressWarnings("rawtypes")
         Map headersMap = (Map) headers;
         headersMap.clear();
 
@@ -278,16 +264,6 @@ public class JwtAuthHandler implements Handler {
     // Interface handler injection
     public void setJwksEndpoint(String jwks) {
         this.jwksEndpoint = jwks;
-    }
-
-    // Interface handler injection
-    public String getJwksEnvVariable() {
-        return jwksEnvVariable;
-    }
-
-    // Interface handler injection
-    public void setJwksEnvVariable(String jwksEnv) {
-        jwksEnvVariable = jwksEnv;
     }
 
     // Interface handler injection

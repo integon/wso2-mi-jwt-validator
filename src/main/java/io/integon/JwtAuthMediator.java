@@ -26,13 +26,31 @@ public class JwtAuthMediator extends AbstractMediator {
 
     private static final Log log = LogFactory.getLog(JwtAuthMediator.class);
 
-    private long cachedTimeValidator = 0;
-    private long cachedTimeValidatorReset = 86400000; // 24 hours
+    private long CACHED_TIME_VALIDATOR = 0;
+    private long CACHED_TIME_VALIDATOR_RESET = 86400000; // 24 hours
+
+    private static final String JWKS_ENDPOINT_PARAMETER_NAME = "jwksEndpoint";
+    private static final String JWKS_TIMEOUT_PARAMETER_NAME = "jwksTimeout";
+    private static final String JWKS_REFRESH_TIME_PARAMETER_NAME = "jwksRefreshTime";
+    private static final String JWT_TOKEN_PARAMETER_NAME = "jwtToken";
+    private static final String IAT_CLAIM_PARAMETER_NAME = "iatClaim";
+    private static final String ISS_CLAIM_PARAMETER_NAME = "issClaim";
+    private static final String SUB_CLAIM_PARAMETER_NAME = "subClaim";
+    private static final String AUD_CLAIM_PARAMETER_NAME = "audClaim";
+    private static final String JTI_CLAIM_PARAMETER_NAME = "jtiClaim";
+    private static final String FORWARD_TOKEN_PARAMETER_NAME = "forwardToken";
+    private static final String RESPOND_PARAMETER_NAME = "respond";
 
     private JWTValidator validator = null;
 
     // Static counter for instances
     private static AtomicLong instanceCount = new AtomicLong();
+
+    private HashMap<String, String> claimsMap = new HashMap<>();
+
+    // initialization flag
+    private boolean initialized = false;
+    private boolean allValuesAreNull = true;
 
     // Constructor
     public JwtAuthMediator() {
@@ -57,30 +75,20 @@ public class JwtAuthMediator extends AbstractMediator {
     @Override
     public boolean mediate(MessageContext messageContext) {
         // initialize the JWTValidator
-        if (validator == null || cachedTimeValidator + cachedTimeValidatorReset < System.currentTimeMillis()) {
+        if (validator == null || CACHED_TIME_VALIDATOR + CACHED_TIME_VALIDATOR_RESET < System.currentTimeMillis()) {
             validator = new JWTValidator();
             log.debug("JWTValidator: " + validator);
-            cachedTimeValidator = System.currentTimeMillis();
+            CACHED_TIME_VALIDATOR = System.currentTimeMillis();
         }
-
-        String jwksEndpoint = (String) messageContext.getProperty("jwksEndpoint");
-        String jwksEnvVariable = (String) messageContext.getProperty("jwksEnvVariable");
-        if ((jwksEndpoint == null || jwksEndpoint.isEmpty())
-                && (jwksEnvVariable == null || jwksEnvVariable.isEmpty())) {
-            log.error("JWKS endpoint not found in the message context");
-            handleException("JWKS endpoint not found in the message", messageContext);
+        String resolvedJwksEndpoint = CommonUtils
+                .resolveConfigValue((String) messageContext.getProperty(JWKS_ENDPOINT_PARAMETER_NAME));
+        if (resolvedJwksEndpoint == null) {
+            handleException("JWKS endpoint not found", messageContext);
             return false;
         }
 
-        // If jwksEnvVariable is set, check if the environment variable contains a valid URL
-        if (jwksEnvVariable != null) {
-            jwksEndpoint = System.getenv().get(jwksEnvVariable);
-            log.debug("JWKS endpoint from Env Variable " + jwksEnvVariable + ": " + jwksEndpoint);
-        }
-
         ArrayList<URL> jwksUrls = new ArrayList<>();
-        
-        String[] jwksUrlsSplit = jwksEndpoint.split(",");
+        String[] jwksUrlsSplit = resolvedJwksEndpoint.split(",");
         for (String jkwsUrlString : jwksUrlsSplit) {
             try {
                 // Trim any spaces and attempt to create a URL
@@ -94,13 +102,13 @@ public class JwtAuthMediator extends AbstractMediator {
                 return false;
             }
         }
-         
-        // retrieve JWKS_TIMEOUT & JWKS_REFRESH_TIME from the message context
-        String jwksTimeout = (String) messageContext.getProperty("jwksTimeout");
-        String jwksRefreshTime = (String) messageContext.getProperty("jwksRefreshTime");
-        validator.setCacheTimeouts(jwksTimeout, jwksRefreshTime);
 
-        String jwtToken = (String) messageContext.getProperty("jwtToken");
+        // retrieve JWKS_TIMEOUT & JWKS_REFRESH_TIME from the message context
+        validator.setCacheTimeouts(
+                CommonUtils.resolveConfigValue((String) messageContext.getProperty(JWKS_TIMEOUT_PARAMETER_NAME)),
+                CommonUtils.resolveConfigValue((String) messageContext.getProperty(JWKS_REFRESH_TIME_PARAMETER_NAME)));
+
+        String jwtToken = (String) messageContext.getProperty(JWT_TOKEN_PARAMETER_NAME);
         // Extract the token from the Authorization header
         if (jwtToken != null && !jwtToken.isEmpty()) {
             jwtToken = jwtToken.trim();
@@ -145,55 +153,36 @@ public class JwtAuthMediator extends AbstractMediator {
             return false;
         }
 
-        // retrieve the sub claim from the message context
-        String iatClaim = (String) messageContext.getProperty("iatClaim");
-        if (iatClaim != null && iatClaim.isEmpty()) {
-            iatClaim = null;
-        }
-        String issClaim = (String) messageContext.getProperty("issClaim");
-        if (issClaim != null && issClaim.isEmpty()) {
-            issClaim = null;
-        }
-        String subClaim = (String) messageContext.getProperty("subClaim");
-        if (subClaim != null && subClaim.isEmpty()) {
-            subClaim = null;
-        }
-        String audClaim = (String) messageContext.getProperty("audClaim");
-        if (audClaim != null && audClaim.isEmpty()) {
-            audClaim = null;
-        }
-        String jtiClaim = (String) messageContext.getProperty("jtiClaim");
-        if (jtiClaim != null && jtiClaim.isEmpty()) {
-            jtiClaim = null;
-        }
-        HashMap<String, String> claims = new HashMap<String, String>();
-        claims.put("iat", iatClaim);
-        claims.put("iss", issClaim);
-        claims.put("sub", subClaim);
-        claims.put("aud", audClaim);
-        claims.put("jti", jtiClaim);
-        log.debug("JWT claims Map set: " + claims);
-        // check if all values are null
-        boolean allValuesAreNull = true;
-        for (String value : claims.values()) {
-            if (value != null) {
-                allValuesAreNull = false;
-                break;
+        // Check if ClaimsMap is initialized
+        if (!initialized) {
+            claimsMap = CommonUtils.initializeClaimsMap((String) messageContext.getProperty(IAT_CLAIM_PARAMETER_NAME),
+                    (String) messageContext.getProperty(ISS_CLAIM_PARAMETER_NAME),
+                    (String) messageContext.getProperty(SUB_CLAIM_PARAMETER_NAME),
+                    (String) messageContext.getProperty(AUD_CLAIM_PARAMETER_NAME),
+                    (String) messageContext.getProperty(JTI_CLAIM_PARAMETER_NAME));
+            // Check if all values are null (only during initialization)
+            allValuesAreNull = true; // Reset to true before checking
+            for (String value : claimsMap.values()) {
+                if (value != null) {
+                    allValuesAreNull = false;
+                    break;
+                }
             }
+            initialized = true;
+            log.debug("JWT claims Map initialized: " + claimsMap);
         }
         if (!allValuesAreNull) {
             try {
-                validator.areClaimsValid(parsedJWT, claims);
+                validator.areClaimsValid(parsedJWT, claimsMap);
             } catch (Exception e) {
                 handleException(e.getMessage(), messageContext);
                 return false;
             }
         }
         log.debug("JWT validation successful");
-
-        String forwardToken = (String) messageContext.getProperty("forwardToken");
-        log.debug("Forward token: " + forwardToken);
-        if (forwardToken != null && forwardToken.equals("true")) {
+        String resolvedForwardToken = CommonUtils
+                .resolveConfigValue((String) messageContext.getProperty(FORWARD_TOKEN_PARAMETER_NAME));
+        if (resolvedForwardToken != null && resolvedForwardToken.equals("true")) {
             log.debug("Set JWT token in the message context");
             // Decode the JWT payload and add it to the transport headers
             String decodedToken = new String(Base64.getDecoder().decode(jwtToken.split("\\.")[1]));
@@ -226,6 +215,7 @@ public class JwtAuthMediator extends AbstractMediator {
                 .getProperty(org.apache.axis2.context.MessageContext.TRANSPORT_HEADERS);
         if (transportHeaders != null) {
             // Clear the transport headers
+            @SuppressWarnings("rawtypes")
             Map transportHeadersMap = (Map) transportHeaders;
             transportHeadersMap.clear();
         }
@@ -245,8 +235,9 @@ public class JwtAuthMediator extends AbstractMediator {
         axis2MessageContext.setProperty("ContentType", "application/json");
 
         // Respond from mediator if respond is 'true' else throw SynapseException
-        String respond = (String) messageContext.getProperty("respond");
-        if (respond != null && respond.equals("true")) {
+        String resolvedRespond = CommonUtils
+                .resolveConfigValue((String) messageContext.getProperty(RESPOND_PARAMETER_NAME));
+        if (resolvedRespond != null && resolvedRespond.equals("true")) {
             log.debug("Respond from Mediator");
             // Set the "to" property to null
             messageContext.setTo(null);

@@ -1,5 +1,6 @@
 package io.integon;
 
+import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.xml.namespace.QName;
@@ -73,4 +74,53 @@ public class CommonUtils {
         }
         return messageContext;
     }
+
+    /**
+     * Resolves a value that may be prefixed with "env:", retrieving the
+     * corresponding environment variable if applicable.
+     *
+     * @param value The input string, which may start with "env:" to reference an
+     *              environment variable.
+     * @return The resolved value from the environment if prefixed with "env:",
+     *         otherwise returns the original string.
+     */
+    public static String resolveConfigValue(String value) {
+        if (value == null || value.isEmpty()) {
+            return null; // Return null if input is empty or null
+        }
+        if (value.startsWith("env:")) {
+            String envVarName = value.substring(4); // Extract env var name after "env:"
+            return System.getenv(envVarName); // Get the environment variable's value
+        }
+
+        return value; // Return the original value if not an env reference
+    }
+
+    /**
+     * Initializes a map containing JWT claims by resolving their configuration
+     * values.
+     * This method creates a new map and populates it with the provided claim
+     * values.
+     *
+     * @param iatClaim Issued At (iat) claim value to be resolved.
+     * @param issClaim Issuer (iss) claim value to be resolved.
+     * @param subClaim Subject (sub) claim value to be resolved.
+     * @param audClaim Audience (aud) claim value to be resolved.
+     * @param jtiClaim JWT ID (jti) claim value to be resolved.
+     * @return A new HashMap containing the resolved JWT claims.
+     */
+    public static HashMap<String, String> initializeClaimsMap(
+            String iatClaim, String issClaim, String subClaim,
+            String audClaim, String jtiClaim) {
+
+        HashMap<String, String> claims = new HashMap<>();
+        claims.put("iat", resolveConfigValue(iatClaim));
+        claims.put("iss", resolveConfigValue(issClaim));
+        claims.put("sub", resolveConfigValue(subClaim));
+        claims.put("aud", resolveConfigValue(audClaim));
+        claims.put("jti", resolveConfigValue(jtiClaim));
+
+        return claims;
+    }
+
 }
