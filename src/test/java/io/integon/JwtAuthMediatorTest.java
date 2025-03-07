@@ -100,7 +100,8 @@ class JwtAuthMediatorTest {
     @SuppressWarnings("unchecked")
     @Test
     void testMediate_ValidJwt_ShouldPass() throws Exception {
-        when(messageContext.getProperty(JWKS_ENDPOINT_PARAMETER_NAME)).thenReturn("https://valid-url-1.com,https://valid-url-2.com");
+        when(messageContext.getProperty(JWKS_ENDPOINT_PARAMETER_NAME))
+                .thenReturn("https://valid-url-1.com,https://valid-url-2.com");
         when(messageContext.getProperty(JWT_TOKEN_PARAMETER_NAME)).thenReturn("Bearer valid.jwt.token");
 
         when(jwtValidator.validateToken(anyString(), any(ArrayList.class))).thenReturn(mock(SignedJWT.class));
@@ -112,7 +113,8 @@ class JwtAuthMediatorTest {
     @SuppressWarnings("unchecked")
     @Test
     void testMediate_ValidJwtWithJwksTimeoutAndRefreshFromValue_ShouldPass() throws Exception {
-        when(messageContext.getProperty(JWKS_ENDPOINT_PARAMETER_NAME)).thenReturn("https://valid-url-1.com,https://valid-url-2.com");
+        when(messageContext.getProperty(JWKS_ENDPOINT_PARAMETER_NAME))
+                .thenReturn("https://valid-url-1.com,https://valid-url-2.com");
         when(messageContext.getProperty(JWT_TOKEN_PARAMETER_NAME)).thenReturn("Bearer valid.jwt.token");
         when(messageContext.getProperty(JWKS_TIMEOUT_PARAMETER_NAME)).thenReturn("30");
         when(messageContext.getProperty(JWKS_REFRESH_TIME_PARAMETER_NAME)).thenReturn("10");
@@ -126,9 +128,10 @@ class JwtAuthMediatorTest {
     @SuppressWarnings("unchecked")
     @Test
     void testMediate_ValidJwtWithJwksTimeoutAndRefreshFromEnv_ShouldPass() throws Exception {
-        when(messageContext.getProperty(JWKS_ENDPOINT_PARAMETER_NAME)).thenReturn("https://valid-url-1.com,https://valid-url-2.com");
+        when(messageContext.getProperty(JWKS_ENDPOINT_PARAMETER_NAME))
+                .thenReturn("https://valid-url-1.com,https://valid-url-2.com");
         when(messageContext.getProperty(JWT_TOKEN_PARAMETER_NAME)).thenReturn("Bearer valid.jwt.token");
-        
+
         environmentVariables.set("JWKS_TIMEOUT", "60");
         environmentVariables.set("JWKS_REFRESH_TIME", "30");
         when(messageContext.getProperty(JWKS_TIMEOUT_PARAMETER_NAME)).thenReturn("env:JWKS_TIMEOUT");
@@ -167,7 +170,8 @@ class JwtAuthMediatorTest {
         // Capture the actual claims map passed to areClaimsValid
         ArgumentCaptor<HashMap<String, String>> claimsCaptor = ArgumentCaptor.forClass(HashMap.class);
 
-        when(messageContext.getProperty(JWKS_ENDPOINT_PARAMETER_NAME)).thenReturn("https://valid-url-1.com,https://valid-url-2.com");
+        when(messageContext.getProperty(JWKS_ENDPOINT_PARAMETER_NAME))
+                .thenReturn("https://valid-url-1.com,https://valid-url-2.com");
         when(messageContext.getProperty(JWT_TOKEN_PARAMETER_NAME)).thenReturn("Bearer valid.jwt.token");
         when(messageContext.getProperty(IAT_CLAIM_PARAMETER_NAME)).thenReturn(expectedIat);
         when(messageContext.getProperty(ISS_CLAIM_PARAMETER_NAME)).thenReturn(expectedIss);
@@ -177,7 +181,7 @@ class JwtAuthMediatorTest {
 
         when(jwtValidator.validateToken(anyString(), any(ArrayList.class))).thenReturn(mock(SignedJWT.class));
         when(jwtValidator.isTokenExpired(any())).thenReturn(false);
-        when(jwtValidator.areClaimsValid(any(),claimsCaptor.capture())).thenReturn(true);
+        when(jwtValidator.areClaimsValid(any(), claimsCaptor.capture())).thenReturn(true);
 
         assertTrue(mediator.mediate(messageContext));
         // Verify the claims map contains the expected values
@@ -234,7 +238,8 @@ class JwtAuthMediatorTest {
     @Test
     void testMediate_ForwardTokenEnabled_ShouldSetHeader() throws Exception {
         when(messageContext.getProperty(JWKS_ENDPOINT_PARAMETER_NAME)).thenReturn("https://valid-url.com");
-        when(messageContext.getProperty(JWT_TOKEN_PARAMETER_NAME)).thenReturn("Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.KMUFsIDTnFmyG3nMiGM6H9FNFUROf3wh7SmqJp-QV30");
+        when(messageContext.getProperty(JWT_TOKEN_PARAMETER_NAME)).thenReturn(
+                "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.KMUFsIDTnFmyG3nMiGM6H9FNFUROf3wh7SmqJp-QV30");
         when(messageContext.getProperty(FORWARD_TOKEN_PARAMETER_NAME)).thenReturn("true");
 
         when(jwtValidator.validateToken(anyString(), any(ArrayList.class))).thenReturn(mock(SignedJWT.class));
@@ -247,7 +252,8 @@ class JwtAuthMediatorTest {
     @Test
     void testMediate_ForwardTokenEnabledFromEnv_ShouldSetHeader() throws Exception {
         when(messageContext.getProperty(JWKS_ENDPOINT_PARAMETER_NAME)).thenReturn("https://valid-url.com");
-        when(messageContext.getProperty(JWT_TOKEN_PARAMETER_NAME)).thenReturn("Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.KMUFsIDTnFmyG3nMiGM6H9FNFUROf3wh7SmqJp-QV30");
+        when(messageContext.getProperty(JWT_TOKEN_PARAMETER_NAME)).thenReturn(
+                "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.KMUFsIDTnFmyG3nMiGM6H9FNFUROf3wh7SmqJp-QV30");
         when(messageContext.getProperty(FORWARD_TOKEN_PARAMETER_NAME)).thenReturn("env:FORWARD_TOKEN");
 
         environmentVariables.set("FORWARD_TOKEN", "true");
