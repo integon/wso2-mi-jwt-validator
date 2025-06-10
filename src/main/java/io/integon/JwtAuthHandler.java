@@ -33,6 +33,7 @@ public class JwtAuthHandler implements Handler {
     private String subClaim;
     private String audClaim;
     private String jtiClaim;
+    private String customClaims;
     private String jwksTimeout;
     private String jwksRefreshTime;
     private String forwardToken;
@@ -168,7 +169,7 @@ public class JwtAuthHandler implements Handler {
         }
         // Check if ClaimsMap is initialized
         if (!initialized) {
-            claimsMap = CommonUtils.initializeClaimsMap(iatClaim, issClaim, subClaim, audClaim, jtiClaim);
+            claimsMap = CommonUtils.initializeClaimsMap(iatClaim, issClaim, subClaim, audClaim, jtiClaim, customClaims);
             // Check if all values are null (only during initialization)
             allValuesAreNull = true; // Reset to true before checking
             for (String value : claimsMap.values()) {
@@ -324,6 +325,16 @@ public class JwtAuthHandler implements Handler {
     // Interface handler injection
     public void setJtiClaim(String jti) {
         jtiClaim = jti;
+    }
+
+     // Interface handler injection
+     public String getCustomClaims() {
+        return customClaims;
+    }
+
+    // Interface handler injection
+    public void setCustomClaims(String custom) {
+        customClaims = custom;
     }
 
     // Interface handler injection

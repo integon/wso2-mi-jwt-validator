@@ -38,6 +38,7 @@ public class JwtAuthMediator extends AbstractMediator {
     private static final String SUB_CLAIM_PARAMETER_NAME = "subClaim";
     private static final String AUD_CLAIM_PARAMETER_NAME = "audClaim";
     private static final String JTI_CLAIM_PARAMETER_NAME = "jtiClaim";
+    private static final String CUSTOM_CLAIMS_PARAMETER_NAME = "customClaims";
     private static final String FORWARD_TOKEN_PARAMETER_NAME = "forwardToken";
     private static final String RESPOND_PARAMETER_NAME = "respond";
 
@@ -159,7 +160,8 @@ public class JwtAuthMediator extends AbstractMediator {
                     (String) messageContext.getProperty(ISS_CLAIM_PARAMETER_NAME),
                     (String) messageContext.getProperty(SUB_CLAIM_PARAMETER_NAME),
                     (String) messageContext.getProperty(AUD_CLAIM_PARAMETER_NAME),
-                    (String) messageContext.getProperty(JTI_CLAIM_PARAMETER_NAME));
+                    (String) messageContext.getProperty(JTI_CLAIM_PARAMETER_NAME),
+                    (String) messageContext.getProperty(CUSTOM_CLAIMS_PARAMETER_NAME));
             // Check if all values are null (only during initialization)
             allValuesAreNull = true; // Reset to true before checking
             for (String value : claimsMap.values()) {

@@ -111,7 +111,7 @@ public class CommonUtils {
      */
     public static HashMap<String, String> initializeClaimsMap(
             String iatClaim, String issClaim, String subClaim,
-            String audClaim, String jtiClaim) {
+            String audClaim, String jtiClaim, String customClaims) {
 
         HashMap<String, String> claims = new HashMap<>();
         claims.put("iat", resolveConfigValue(iatClaim));
@@ -119,6 +119,17 @@ public class CommonUtils {
         claims.put("sub", resolveConfigValue(subClaim));
         claims.put("aud", resolveConfigValue(audClaim));
         claims.put("jti", resolveConfigValue(jtiClaim));
+        
+        String regex = "^([a-zA-Z0-9_-]+:[^:,]+)(,[a-zA-Z0-9_-]+:[^:,]+)*$";
+        if (customClaims != null && !customClaims.trim().isEmpty() && customClaims.matches(regex)) {
+            String[] claimPairs = customClaims.split(",");
+            for (String pair : claimPairs) {
+                String[] keyValue = pair.split(":", 2);
+                if (keyValue.length == 2) {
+                    claims.put(keyValue[0].trim(), keyValue[1].trim());
+                }
+            }
+        }
 
         return claims;
     }
