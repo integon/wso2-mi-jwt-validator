@@ -209,12 +209,14 @@ class JwtAuthHandlerTest {
         String expectedSub = "expected-sub";
         String expectedAud = "expected-aud";
         String expectedJti = "true";
+        String expectedCustomClaims = "role:admin|manager,location:Zurich|Geneva|Bern";
 
         handler.setIatClaim(expectedIat);
         handler.setIssClaim(expectedIss);
         handler.setSubClaim(expectedSub);
         handler.setAudClaim(expectedAud);
         handler.setJtiClaim(expectedJti);
+        handler.setCustomClaims(expectedCustomClaims);
 
         // Capture the actual claims map passed to areClaimsValid
         @SuppressWarnings("unchecked")
@@ -242,6 +244,8 @@ class JwtAuthHandlerTest {
         assertEquals(expectedSub, capturedClaims.get("sub"), "Expected 'sub' claim does not match");
         assertEquals(expectedAud, capturedClaims.get("aud"), "Expected 'aud' claim does not match");
         assertEquals(expectedJti, capturedClaims.get("jti"), "Expected 'jti' claim does not match");
+        assertEquals("admin|manager", capturedClaims.get("role"), "Expected 'role' claim does not match");
+        assertEquals("Zurich|Geneva|Bern", capturedClaims.get("location"), "Expected 'location' claim does not match");
     }
 
     @Test

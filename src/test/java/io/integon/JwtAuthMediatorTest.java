@@ -49,6 +49,7 @@ class JwtAuthMediatorTest {
     private static final String SUB_CLAIM_PARAMETER_NAME = "subClaim";
     private static final String AUD_CLAIM_PARAMETER_NAME = "audClaim";
     private static final String JTI_CLAIM_PARAMETER_NAME = "jtiClaim";
+    private static final String CUSTOM_CLAIMS_PARAMETER_NAME = "customClaims";
 
 
     @BeforeEach
@@ -166,6 +167,7 @@ class JwtAuthMediatorTest {
         String expectedSub = "expected-sub";
         String expectedAud = "expected-aud";
         String expectedJti = "true";
+        String expectedCustomClaims = "role:admin|manager,location:Zurich|Geneva|Bern";
 
         // Capture the actual claims map passed to areClaimsValid
         ArgumentCaptor<HashMap<String, String>> claimsCaptor = ArgumentCaptor.forClass(HashMap.class);
@@ -178,6 +180,7 @@ class JwtAuthMediatorTest {
         when(messageContext.getProperty(SUB_CLAIM_PARAMETER_NAME)).thenReturn(expectedSub);
         when(messageContext.getProperty(AUD_CLAIM_PARAMETER_NAME)).thenReturn(expectedAud);
         when(messageContext.getProperty(JTI_CLAIM_PARAMETER_NAME)).thenReturn(expectedJti);
+        when(messageContext.getProperty(CUSTOM_CLAIMS_PARAMETER_NAME)).thenReturn(expectedCustomClaims);
 
         when(jwtValidator.validateToken(anyString(), any(ArrayList.class))).thenReturn(mock(SignedJWT.class));
         when(jwtValidator.isTokenExpired(any())).thenReturn(false);
@@ -191,6 +194,8 @@ class JwtAuthMediatorTest {
         assertEquals(expectedSub, capturedClaims.get("sub"), "Expected 'sub' claim does not match");
         assertEquals(expectedAud, capturedClaims.get("aud"), "Expected 'aud' claim does not match");
         assertEquals(expectedJti, capturedClaims.get("jti"), "Expected 'jti' claim does not match");
+        assertEquals("admin|manager", capturedClaims.get("role"), "Expected 'role' claim does not match");
+        assertEquals("Zurich|Geneva|Bern", capturedClaims.get("location"), "Expected 'location' claim does not match");
     }
 
     @SuppressWarnings("unchecked")
