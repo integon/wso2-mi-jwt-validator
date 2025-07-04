@@ -7,6 +7,8 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -33,6 +35,9 @@ public class JWTValidator {
     private long ttl = 60 * 60 * 1000; // 1 hour
     private long refreshTimeout = 30 * 60 * 1000; // 30 minutes
     private RSAPublicKey publicKey = null;
+
+    private static final Set<String> STANDARD_CLAIMS = Set.of("iat", "iss", "sub", "aud", "jti");
+
 
     private HashMap<String, Boolean> jtiMap;
     // 8 hour
@@ -170,6 +175,31 @@ public class JWTValidator {
             }
             log.debug("JWT token JTI claim is valid");
         }
+
+        // Dynamic custom claims validation
+        for (Map.Entry<String, String> entry : claims.entrySet()) {
+            String claimKey = entry.getKey();
+            String expectedPattern = entry.getValue();
+
+            if (STANDARD_CLAIMS.contains(claimKey)) {
+                continue; // Skip standard claims, already validated
+            }
+
+            Object actualValueObj = parsedJWT.getJWTClaimsSet().getClaim(claimKey);
+            if (actualValueObj == null) {
+                log.debug("JWT does not contain expected custom claim: " + claimKey);
+                throw new Exception("Missing expected custom claim: " + claimKey);
+            }
+
+            String actualValue = actualValueObj.toString();
+            if (!actualValue.matches(expectedPattern)) {
+                log.debug("JWT claim '" + claimKey + "' value '" + actualValue + "' does not match pattern: " + expectedPattern);
+                throw new Exception("JWT custom claim '" + claimKey + "' did not match expected pattern");
+            }
+
+            log.debug("JWT custom claim '" + claimKey + "' matches expected pattern");
+        }
+
         log.debug("JWT token claims are valid");
         return true;
     }

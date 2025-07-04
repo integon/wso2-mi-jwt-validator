@@ -555,6 +555,55 @@ class JwtValidatorTest {
         }
 
         @Test
+        void areClaimsValid_WithValidCustomClaims_ShouldReturnTrue() throws Exception {
+                // Generate an expired JWT
+                JWSHeader header = new JWSHeader.Builder(JWSAlgorithm.RS256)
+                                .keyID("mock1")
+                                .build();
+
+                SignedJWT signedJWT = new SignedJWT(header,
+                                new com.nimbusds.jwt.JWTClaimsSet.Builder()
+                                                .claim("role", "user")
+                                                .claim("location", "Bern")
+                                                .build());
+
+                signedJWT.sign(new RSASSASigner(privateKey1));
+
+                HashMap<String, String> claims = new HashMap<>();
+                claims.put("role", "user|admin");
+                claims.put("location", "Bern|Zurich");
+
+                Boolean areClaimsValid = jwtValidator.areClaimsValid(signedJWT, claims);
+
+                assertThat(areClaimsValid).isTrue();
+        }
+
+        @Test
+        void areClaimsValid_WithInvalidCustomClaims_ShouldThrowException() throws Exception {
+                // Generate an expired JWT
+                JWSHeader header = new JWSHeader.Builder(JWSAlgorithm.RS256)
+                                .keyID("mock1")
+                                .build();
+
+                SignedJWT signedJWT = new SignedJWT(header,
+                                new com.nimbusds.jwt.JWTClaimsSet.Builder()
+                                                .claim("role", "user")
+                                                .claim("location", "Bern")
+                                                .build());
+
+                signedJWT.sign(new RSASSASigner(privateKey1));
+
+                HashMap<String, String> claims = new HashMap<>();
+                claims.put("role", "customer|admin");
+                claims.put("location", "Bern|Zurich");
+
+                Throwable thrown = catchThrowable(() -> jwtValidator.areClaimsValid(signedJWT, claims));
+                
+                assertThat(thrown).isInstanceOf(Exception.class)
+                                .hasMessageContaining("JWT custom claim 'role' did not match expected pattern");
+        }
+
+        @Test
         void setCacheTimeouts_WhenJwksTimeoutAndjwksRefreshTimeAreNull_ShouldSetDefaultValues(){
                 String jwksTimeout = null;
                 String jwksRefreshTime = null;
