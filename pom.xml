@@ -8,8 +8,7 @@
   <version>1.4.0</version>
 
   <name>wso2-mi-jwt-validator</name>
-  <description>A brief description of my project.</description>
-  <!-- FIXME change it to the project's website -->
+  <description>JWT Validator for the WSO2 Micro Integrator</description>  
   <url>https://github.com/integonch/wso2-mi-jwt-validator</url>
   <inceptionYear>2023</inceptionYear>
 
@@ -37,25 +36,16 @@
   <scm>
     <connection>scm:git:git://github.com/integonch/wso2-mi-jwt-validator.git</connection>
     <developerConnection>scm:git:ssh://github.com:integonch/wso2-mi-jwt-validator.git</developerConnection>
-    <url>http://github.com/integonch/wso2-mi-jwt-validator/tree/master</url>
+    <url>http://github.com/integon/wso2-mi-jwt-validator/tree/master</url>
   </scm>
-
-  <distributionManagement>
-    <snapshotRepository>
-      <id>ossrh</id>
-      <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
-    </snapshotRepository>
-    <repository>
-      <id>ossrh</id>
-      <url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-    </repository>
-  </distributionManagement>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
     <spotless.version>2.27.2</spotless.version>
+    <!-- Central Publishing Plugin version -->
+    <central-publishing-maven-plugin.version>0.8.0</central-publishing-maven-plugin.version>
   </properties>
 
   <repositories>
@@ -80,6 +70,7 @@
       </releases>
     </repository>
   </repositories>
+
   <dependencies>
     <dependency>
       <groupId>org.apache.synapse</groupId>
@@ -100,7 +91,7 @@
     <dependency>
       <groupId>org.junit.jupiter</groupId>
       <artifactId>junit-jupiter-api</artifactId>
-      <version>5.9.3</version>      <!-- Or latest version -->
+      <version>5.9.3</version>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -160,6 +151,7 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
   <build>
     <pluginManagement>
       <plugins>
@@ -181,7 +173,7 @@
         </plugin>
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>2.22.2</version>
+          <version>3.5.0</version>
         </plugin>
         <plugin>
           <artifactId>maven-failsafe-plugin</artifactId>
@@ -205,20 +197,22 @@
         </plugin>
       </plugins>
     </pluginManagement>
-    <plugins>
 
+    <plugins>
+      <!-- Central Publishing Plugin - replaces nexus-staging-maven-plugin -->
       <plugin>
-        <groupId>org.sonatype.plugins</groupId>
-        <artifactId>nexus-staging-maven-plugin</artifactId>
-        <version>1.7.0</version>
+        <groupId>org.sonatype.central</groupId>
+        <artifactId>central-publishing-maven-plugin</artifactId>
+        <version>${central-publishing-maven-plugin.version}</version>
         <extensions>true</extensions>
         <configuration>
-          <serverId>ossrh</serverId>
-          <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
-          <autoReleaseAfterClose>true</autoReleaseAfterClose>
+          <publishingServerId>central</publishingServerId>
+          <autoPublish>true</autoPublish>
+          <waitUntil>published</waitUntil>
         </configuration>
       </plugin>
 
+      <!-- Maven Javadoc Plugin -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
@@ -233,6 +227,7 @@
         </executions>
       </plugin>
 
+      <!-- Maven Source Plugin -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
@@ -247,6 +242,7 @@
         </executions>
       </plugin>
 
+      <!-- Maven GPG Plugin -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-gpg-plugin</artifactId>
@@ -262,13 +258,27 @@
         </executions>
       </plugin>
     </plugins>
-
   </build>
+
   <profiles>
     <profile>
       <id>release</id>
       <build>
         <plugins>
+          <!-- Central Publishing Plugin for release profile -->
+          <plugin>
+            <groupId>org.sonatype.central</groupId>
+            <artifactId>central-publishing-maven-plugin</artifactId>
+            <version>${central-publishing-maven-plugin.version}</version>
+            <extensions>true</extensions>
+            <configuration>
+              <publishingServerId>central</publishingServerId>
+              <autoPublish>true</autoPublish>
+              <waitUntil>published</waitUntil>
+            </configuration>
+          </plugin>
+
+          <!-- Maven Javadoc Plugin -->
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-javadoc-plugin</artifactId>
@@ -282,6 +292,8 @@
               </execution>
             </executions>
           </plugin>
+
+          <!-- Maven Source Plugin -->
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-source-plugin</artifactId>
@@ -295,32 +307,23 @@
               </execution>
             </executions>
           </plugin>
+
+          <!-- Maven GPG Plugin -->
           <plugin>
-            <groupId>org.jreleaser</groupId>
-            <artifactId>jreleaser-maven-plugin</artifactId>
-            <version>1.3.1</version>
-            <configuration>
-              <jreleaser>
-                <signing>
-                  <active>ALWAYS</active>
-                  <armored>true</armored>
-                </signing>
-                <deploy>
-                  <maven>
-                    <nexus2>
-                      <maven-central>
-                        <active>ALWAYS</active>
-                        <url>https://s01.oss.sonatype.org/service/local</url>
-                        <closeRepository>true</closeRepository>
-                        <releaseRepository>true</releaseRepository>
-                        <stagingRepositories>target/staging-deploy</stagingRepositories>
-                      </maven-central>
-                    </nexus2>
-                  </maven>
-                </deploy>
-              </jreleaser>
-            </configuration>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>3.1.0</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
           </plugin>
+
           <!-- Maven Surefire Plugin for running tests -->
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
